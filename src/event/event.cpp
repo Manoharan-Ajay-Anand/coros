@@ -11,26 +11,34 @@
 #include <cstring>
 #include <iostream>
 
-void event::SocketEventMonitor::register_handler(int socket_fd, SocketEventHandler* handler) {
-    std::lock_guard<std::mutex> handler_lock(handler_mutex);
-    handler_map[socket_fd] = handler;
-    std::cerr << "Handler registered: " << socket_fd << std::endl;
+void event::SocketEventMonitor::register_socket(int socket_fd, SocketHandler* socket) {
+    std::lock_guard<std::mutex> socket_lock(socket_mutex);
+    socket_map[socket_fd] = socket;
+    std::cerr << "Registered socket: " << socket_fd << std::endl;
 }
 
-void event::SocketEventMonitor::deregister_handler(int socket_fd) {
-    std::lock_guard<std::mutex> handler_lock(handler_mutex);
-    handler_map.erase(socket_fd);
+void event::SocketEventMonitor::deregister_socket(int socket_fd) {
+    std::lock_guard<std::mutex> socket_lock(socket_mutex);
+    socket_map.erase(socket_fd);
 }
 
-void event::SocketEventMonitor::listen_for_event(int socket_fd, bool do_read, bool do_write) {
+void event::SocketEventMonitor::listen_for_read(int socket_fd) {
     {
         std::lock_guard<std::mutex> event_lock(event_mutex);
-        event_queue.push({ socket_fd, do_read, do_write});
+        event_queue.push({ socket_fd, true, false });
     }
     events_available.notify_one();
 }
 
-void event::SocketEventMonitor::set_event(SocketEvent& socket_event, pollfd& pollfd) {
+void event::SocketEventMonitor::listen_for_write(int socket_fd) {
+    {
+        std::lock_guard<std::mutex> event_lock(event_mutex);
+        event_queue.push({ socket_fd, false, true });
+    }
+    events_available.notify_one();
+}
+
+void set_event(event::SocketEvent& socket_event, pollfd& pollfd) {
     if (socket_event.do_read) {
         pollfd.events = pollfd.events | POLLIN;
     }
@@ -59,18 +67,15 @@ void event::SocketEventMonitor::populate_events(std::vector<pollfd>& pollfds) {
 }
 
 void event::SocketEventMonitor::trigger_events(std::vector<pollfd>& pollfds) {
-    std::lock_guard<std::mutex> handler_lock(handler_mutex);
-    //std::cerr << "Trigger events: " << handler_map.size() << std::endl;
     for (auto it = pollfds.begin(); it != pollfds.end(); it++) {
         pollfd& pfd = *it;
         bool can_read = (pfd.revents & POLLIN) == POLLIN;
         bool can_write = (pfd.revents & POLLOUT) == POLLOUT;
-        auto h_it = handler_map.find(pfd.fd);
-        if (h_it == handler_map.end()) {
-            std::cerr << "Cannot find handler: " << pfd.fd << std::endl;
-            continue;
+        std::lock_guard<std::mutex> socket_lock(socket_mutex);
+        auto socket_it = socket_map.find(pfd.fd);
+        if (socket_it != socket_map.end()) {
+            socket_it->second->on_socket_event(can_read, can_write);
         }
-        h_it->second->on_socket_event(can_read, can_write);
     } 
 }
 
@@ -78,12 +83,10 @@ void event::SocketEventMonitor::start() {
     while (true) {
         std::vector<pollfd> pollfds;
         populate_events(pollfds);
-        //std::cerr << "Poll fds size: " << pollfds.size() << std::endl;
         int fd_count = poll(pollfds.data(), pollfds.size(), 2000);
         if (fd_count == -1) {
-            throw std::string("Poll Error: ") + std::string(strerror(errno));
+            throw std::runtime_error(std::string("Poll Error: ").append(strerror(errno)));
         }
-        //std::cerr << "Fd count: " << fd_count << std::endl;
         trigger_events(pollfds);
     }
 }

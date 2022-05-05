@@ -9,13 +9,14 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcoroutines")
 
 add_executable(Server
-    src/channel/socket_input.cpp
-    src/channel/socket_output.cpp
     src/concurrent/thread_pool.cpp
     src/event/event.cpp
+    src/memory/read_socket_buffer.cpp
+    src/memory/write_socket_buffer.cpp
     src/memory/socket_buffer.cpp
     src/server/server.cpp
-    src/server/socket.cpp
+    src/socket/socket.cpp
+    src/socket/awaiter.cpp
     src/main.cpp)
 
 find_package(Threads REQUIRED)

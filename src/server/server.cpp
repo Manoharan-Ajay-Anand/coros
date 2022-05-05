@@ -1,22 +1,24 @@
 #include "server.h"
-#include "socket.h"
+#include "socket/socket.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include <cerrno>
 #include <cstring>
 #include <string>
 #include <stdexcept>
 #include <iostream>
 #include <memory>
+#include <mutex>
 
 server::Server::Server(short port) : service(std::to_string(port)) {
 }
 
 server::Server::~Server() {
-    shutdown(server_socketfd, SHUT_RDWR);
+    close(server_socketfd);
 }
 
 addrinfo server::Server::get_local_addr_info() {
@@ -62,8 +64,8 @@ void server::Server::bootstrap() {
     if (status == -1) {
         throw std::runtime_error(std::string("Server listen(): ").append(strerror(errno)));
     }
-    event_monitor.register_handler(server_socketfd, this);
-    event_monitor.listen_for_event(server_socketfd, true, false);
+    event_monitor.register_socket(server_socketfd, this);
+    event_monitor.listen_for_read(server_socketfd);
     event_monitor.start();
 }
 
@@ -79,9 +81,23 @@ void server::Server::on_socket_event(bool can_read, bool can_write) {
         }
         std::cerr << "Socket connection detected: " << socket_fd << std::endl;
         set_non_blocking(socket_fd);
-        socket_map[socket_fd] = std::make_unique<Socket>(socket_fd, client_addr, addr_size, *this, 
-            event_monitor, thread_pool);
-        thread_pool.execute([&, socket_fd] { socket_map.at(socket_fd)->handle_request(); });
+        {
+            std::lock_guard<std::mutex> socket_lock(socket_mutex);
+            socket_map[socket_fd] = std::make_unique<Socket>(socket_fd, 
+                client_addr, addr_size, *this, event_monitor, thread_pool);
+        }
+        thread_pool.execute([&, socket_fd] {
+            Socket* socket = socket_map.at(socket_fd).get();
+            event_monitor.register_socket(socket_fd, socket);
+            socket->handle_request(); 
+        });
     }
-    event_monitor.listen_for_event(server_socketfd, true, false);
+    event_monitor.listen_for_read(server_socketfd);
+}
+
+void server::Server::destroy_socket(int socket_fd) {
+    std::cerr << "Destroying Socket " << socket_fd << std::endl;
+    std::lock_guard<std::mutex> socket_lock(socket_mutex);
+    socket_map.erase(socket_fd);
+    std::cerr << "Destroyed Socket " << socket_fd << std::endl;
 }

@@ -8,7 +8,8 @@
 #include <cerrno>
 #include <stdexcept>
 
-memory::SocketBuffer::SocketBuffer() {
+memory::SocketBuffer::SocketBuffer(int socket_fd) {
+    this->socket_fd = socket_fd;
     this->data = new uint8_t[BUFFER_LIMIT];
     this->start = 0;
     this->end = 0;
@@ -34,67 +35,14 @@ void memory::SocketBuffer::compact() {
     end = dest;
 }
 
+int memory::SocketBuffer::get_fd() {
+    return socket_fd;
+}
+
 int memory::SocketBuffer::remaining() {
     return end - start;
 }
 
-void memory::SocketBuffer::read(uint8_t* dest, int size) {
-    if (size > remaining()) {
-        throw std::runtime_error("SocketBuffer read error: Read size more than remaining");
-    }
-    std::memcpy(dest, data + start, size);
-    start += size;
-}
-
-int memory::SocketBuffer::recv_socket(int socket_fd) {
-    compact();
-    int prev_end = end;
-    while (end < limit) {
-        int size_read = recv(socket_fd, data + end, capacity(), 0);
-        if (size_read == 0) {
-            throw std::runtime_error("SocketBuffer recv_socket failed: client disconnected");
-        }
-        if (size_read < 0) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                break;
-            }
-            throw std::runtime_error(std::string("SocketBuffer recv(): ").append(strerror(errno)));
-        }
-        end += size_read;
-    }
-    if (end > prev_end) {
-        return SOCKET_OP_CONTINUE;
-    }
-    return SOCKET_OP_WOULD_BLOCK;
-}
-
 int memory::SocketBuffer::capacity() {
     return limit - end;
-}
-
-void memory::SocketBuffer::write(uint8_t* src, int size) {
-    compact();
-    if (size > capacity()) {
-        throw std::runtime_error("SocketBuffer write error: Write size more than capacity");
-    }
-    std::memcpy(data + end, src, size);
-    end += size;
-}
-
-int memory::SocketBuffer::send_socket(int socket_fd) {
-    int prev_start = start;
-    while (start < end) {
-        int size_written = send(socket_fd, data + start, remaining(), 0);
-        if (size_written < 0) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                break;
-            }
-            throw std::runtime_error(std::string("SocketBuffer send(): ").append(strerror(errno)));
-        }
-        start += size_written;
-    }
-    if (start > prev_start) {
-        return SOCKET_OP_CONTINUE;
-    }
-    return SOCKET_OP_WOULD_BLOCK;
 }

@@ -10,21 +10,19 @@
 
 namespace memory {
     class SocketBuffer {
-        private:
+        protected:
+            int socket_fd;
             uint8_t* data;
             int start;
             int end;
             int limit;
+            SocketBuffer(int socket_fd);
             void compact();
         public:
-            SocketBuffer();
             ~SocketBuffer();
+            int get_fd();
             int remaining();
-            void read(uint8_t* dest, int size);
-            int recv_socket(int socket_fd);
             int capacity();
-            void write(uint8_t* src, int size);
-            int send_socket(int socket_fd);
     };
 }
 
