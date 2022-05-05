@@ -35,7 +35,6 @@ bool server::SocketReadAwaiter::await_ready() noexcept {
 }
 
 void server::SocketReadAwaiter::await_suspend(std::coroutine_handle<> handle) {
-    std::cerr << "Calling await suspend SocketReadAwaiter" << std::endl;
     read(handle);
 }
 
@@ -67,7 +66,6 @@ bool server::SocketWriteAwaiter::await_ready() noexcept {
 }
 
 void server::SocketWriteAwaiter::await_suspend(std::coroutine_handle<> handle) {
-    std::cerr << "Calling await suspend SocketWriteAwaiter" << std::endl;
     write(handle);
 }
 
@@ -88,6 +86,5 @@ bool server::SocketFlushAwaiter::await_ready() noexcept {
 }
 
 void server::SocketFlushAwaiter::await_suspend(std::coroutine_handle<> handle) {
-    std::cerr << "Calling await suspend SocketFlushAwaiter" << std::endl;
     flush(handle);
 }
