@@ -11,12 +11,13 @@
 #include <functional>
 #include <sys/socket.h>
 #include <mutex>
-
-namespace concurrent {
-    class ThreadPool;
-}
+#include <atomic>
 
 namespace server {
+    namespace concurrent {
+        class ThreadPool;
+    }
+
     class Server;
 
     class Socket : public event::SocketHandler {
@@ -29,6 +30,7 @@ namespace server {
             concurrent::ThreadPool& thread_pool;
             memory::SocketReadBuffer input_buffer;
             memory::SocketWriteBuffer output_buffer;
+            std::atomic_bool marked_for_close;
             std::mutex read_handler_mutex;
             bool read_handler_set;
             std::function<void()> read_handler;
@@ -49,6 +51,7 @@ namespace server {
             SocketWriteAwaiter write(uint8_t* src, int size);
             SocketFlushAwaiter flush();
             concurrent::Future handle_request();
+            void close_socket();
     };
 } 
 

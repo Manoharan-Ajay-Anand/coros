@@ -17,15 +17,13 @@ server::Socket::Socket(int socket_fd, sockaddr_storage client_addr, socklen_t ad
   input_buffer(socket_fd), output_buffer(socket_fd) {
     this->client_addr = client_addr;
     this->addr_size = addr_size;
+    this->marked_for_close = false;
     this->read_handler_set = false;
     this->write_handler_set = false;
 }
 
 server::Socket::~Socket() {
-    std::lock_guard<std::mutex> read_lock(read_handler_mutex);
-    std::lock_guard<std::mutex> write_lock(write_handler_mutex);
-    read_handler_set = false;
-    write_handler_set = false;
+    marked_for_close = true;
     event_monitor.deregister_socket(socket_fd);
     close(socket_fd);
 }
@@ -75,6 +73,9 @@ void server::Socket::on_socket_write(bool can_write) {
 }
 
 void server::Socket::on_socket_event(bool can_read, bool can_write) {
+    if (marked_for_close) {
+        return;
+    }
     on_socket_read(can_read);
     on_socket_write(can_write);
 }
@@ -91,7 +92,11 @@ server::SocketFlushAwaiter server::Socket::flush() {
     return { *this, output_buffer };
 }
 
-concurrent::Future server::Socket::handle_request() {
+void server::Socket::close_socket() {
+    server.destroy_socket(socket_fd);
+}
+
+server::concurrent::Future server::Socket::handle_request() {
     while (true) {
         std::cerr << "Handling request" << std::endl;
         std::string input;

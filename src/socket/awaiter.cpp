@@ -8,22 +8,28 @@
 #include <iostream>
 
 void server::SocketReadAwaiter::read(std::coroutine_handle<> handle) {
-    while (size > 0) {
-        if (buffer.remaining() > 0) {
-            int size_to_read = std::min(buffer.remaining(), size);
-            buffer.read(dest + offset, size_to_read);
-            offset += size_to_read;
-            size -= size_to_read;
-            continue;
+    try {
+        while (size > 0) {
+            if (buffer.remaining() > 0) {
+                int size_to_read = std::min(buffer.remaining(), size);
+                buffer.read(dest + offset, size_to_read);
+                offset += size_to_read;
+                size -= size_to_read;
+                continue;
+            }
+            int status = buffer.recv_socket();
+            if (status == SOCKET_OP_WOULD_BLOCK) {
+                return socket.listen_for_read([&, handle]() {
+                    read(handle);
+                });
+            }
         }
-        int status = buffer.recv_socket();
-        if (status == SOCKET_OP_WOULD_BLOCK) {
-            return socket.listen_for_read([&, handle]() {
-                read(handle);
-            });
-        }
+        handle.resume();
+    } catch (std::runtime_error error) {
+        std::cerr << error.what() << std::endl;
+        handle.destroy();
+        socket.close_socket();
     }
-    handle.resume();
 }
 
 bool server::SocketReadAwaiter::await_ready() noexcept {
@@ -39,22 +45,28 @@ void server::SocketReadAwaiter::await_suspend(std::coroutine_handle<> handle) {
 }
 
 void server::SocketWriteAwaiter::write(std::coroutine_handle<> handle) {
-    while (size > 0) {
-        if (buffer.capacity() > 0) {
-            int size_to_write = std::min(buffer.capacity(), size);
-            buffer.write(src + offset, size_to_write);
-            offset += size_to_write;
-            size -= size_to_write;
-            continue;
+    try {
+        while (size > 0) {
+            if (buffer.capacity() > 0) {
+                int size_to_write = std::min(buffer.capacity(), size);
+                buffer.write(src + offset, size_to_write);
+                offset += size_to_write;
+                size -= size_to_write;
+                continue;
+            }
+            int status = buffer.send_socket();
+            if (status == SOCKET_OP_WOULD_BLOCK) {
+                return socket.listen_for_write([&, handle]() {
+                    write(handle);
+                });
+            }
         }
-        int status = buffer.send_socket();
-        if (status == SOCKET_OP_WOULD_BLOCK) {
-            return socket.listen_for_write([&, handle]() {
-                write(handle);
-            });
-        }
+        handle.resume();
+    } catch (std::runtime_error error) {
+        std::cerr << error.what() << std::endl;
+        handle.destroy();
+        socket.close_socket();
     }
-    handle.resume();
 }
 
 bool server::SocketWriteAwaiter::await_ready() noexcept {
@@ -70,15 +82,21 @@ void server::SocketWriteAwaiter::await_suspend(std::coroutine_handle<> handle) {
 }
 
 void server::SocketFlushAwaiter::flush(std::coroutine_handle<> handle) {
-    while (buffer.remaining() > 0) {
-        int status = buffer.send_socket();
-        if (status == SOCKET_OP_WOULD_BLOCK) {
-            return socket.listen_for_write([&, handle]() {
-                flush(handle);
-            });
+    try {
+        while (buffer.remaining() > 0) {
+            int status = buffer.send_socket();
+            if (status == SOCKET_OP_WOULD_BLOCK) {
+                return socket.listen_for_write([&, handle]() {
+                    flush(handle);
+                });
+            }
         }
+        handle.resume();
+    } catch (std::runtime_error error) {
+        std::cerr << error.what() << std::endl;
+        handle.destroy();
+        socket.close_socket();
     }
-    handle.resume();
 }
 
 bool server::SocketFlushAwaiter::await_ready() noexcept {

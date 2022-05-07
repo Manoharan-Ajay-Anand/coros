@@ -8,22 +8,24 @@
 
 #define BUFFER_LIMIT 8192
 
-namespace memory {
-    class SocketBuffer {
-        protected:
-            int socket_fd;
-            uint8_t* data;
-            int start;
-            int end;
-            int limit;
-            SocketBuffer(int socket_fd);
-            void compact();
-        public:
-            ~SocketBuffer();
-            int get_fd();
-            int remaining();
-            int capacity();
-    };
+namespace server {
+    namespace memory {
+        class SocketBuffer {
+            protected:
+                int socket_fd;
+                uint8_t* data;
+                int start;
+                int end;
+                int limit;
+                SocketBuffer(int socket_fd);
+                void compact();
+            public:
+                ~SocketBuffer();
+                int get_fd();
+                int remaining();
+                int capacity();
+        };
+    }
 }
 
 #endif

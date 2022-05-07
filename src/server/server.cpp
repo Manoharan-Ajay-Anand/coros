@@ -96,7 +96,6 @@ void server::Server::on_socket_event(bool can_read, bool can_write) {
 }
 
 void server::Server::destroy_socket(int socket_fd) {
-    std::cerr << "Destroying Socket " << socket_fd << std::endl;
     std::lock_guard<std::mutex> socket_lock(socket_mutex);
     socket_map.erase(socket_fd);
     std::cerr << "Destroyed Socket " << socket_fd << std::endl;

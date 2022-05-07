@@ -4,14 +4,12 @@
 #include <cstdint>
 #include <coroutine>
 
-namespace memory {
-    class SocketReadBuffer;
-
-    class SocketWriteBuffer;
-}
-
 namespace server {
-    class Server;
+    namespace memory {
+        class SocketReadBuffer;
+
+        class SocketWriteBuffer;
+    }
 
     class Socket;
 

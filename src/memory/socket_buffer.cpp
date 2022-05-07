@@ -8,7 +8,7 @@
 #include <cerrno>
 #include <stdexcept>
 
-memory::SocketBuffer::SocketBuffer(int socket_fd) {
+server::memory::SocketBuffer::SocketBuffer(int socket_fd) {
     this->socket_fd = socket_fd;
     this->data = new uint8_t[BUFFER_LIMIT];
     this->start = 0;
@@ -16,11 +16,11 @@ memory::SocketBuffer::SocketBuffer(int socket_fd) {
     this->limit = BUFFER_LIMIT;
 }
 
-memory::SocketBuffer::~SocketBuffer() {
+server::memory::SocketBuffer::~SocketBuffer() {
     delete[] data; 
 }
 
-void memory::SocketBuffer::compact() {
+void server::memory::SocketBuffer::compact() {
     if (start == 0) {
         return;
     }
@@ -35,14 +35,14 @@ void memory::SocketBuffer::compact() {
     end = dest;
 }
 
-int memory::SocketBuffer::get_fd() {
+int server::memory::SocketBuffer::get_fd() {
     return socket_fd;
 }
 
-int memory::SocketBuffer::remaining() {
+int server::memory::SocketBuffer::remaining() {
     return end - start;
 }
 
-int memory::SocketBuffer::capacity() {
+int server::memory::SocketBuffer::capacity() {
     return limit - end;
 }

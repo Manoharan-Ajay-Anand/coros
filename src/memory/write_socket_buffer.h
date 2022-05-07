@@ -5,13 +5,15 @@
 
 #include <cstdint>
 
-namespace memory {
-    class SocketWriteBuffer : public SocketBuffer {
-        public:
-            SocketWriteBuffer(int socket_fd);
-            void write(uint8_t* src, int size);
-            int send_socket();
-    };
+namespace server {
+    namespace memory {
+        class SocketWriteBuffer : public SocketBuffer {
+            public:
+                SocketWriteBuffer(int socket_fd);
+                void write(uint8_t* src, int size);
+                int send_socket();
+        };
+    }
 }
 
 #endif

@@ -8,10 +8,10 @@
 #include <cerrno>
 #include <stdexcept>
 
-memory::SocketReadBuffer::SocketReadBuffer(int socket_fd) : SocketBuffer(socket_fd) {
+server::memory::SocketReadBuffer::SocketReadBuffer(int socket_fd) : SocketBuffer(socket_fd) {
 }
 
-void memory::SocketReadBuffer::read(uint8_t* dest, int size) {
+void server::memory::SocketReadBuffer::read(uint8_t* dest, int size) {
     if (size > remaining()) {
         throw std::runtime_error("SocketBuffer read error: Read size more than remaining");
     }
@@ -19,7 +19,7 @@ void memory::SocketReadBuffer::read(uint8_t* dest, int size) {
     start += size;
 }
 
-int memory::SocketReadBuffer::recv_socket() {
+int server::memory::SocketReadBuffer::recv_socket() {
     compact();
     int prev_end = end;
     while (end < limit) {
