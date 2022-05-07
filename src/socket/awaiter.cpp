@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <coroutine>
 #include <iostream>
+#include <stdexcept>
 
 void server::SocketReadAwaiter::read(std::coroutine_handle<> handle) {
     try {
@@ -24,12 +25,10 @@ void server::SocketReadAwaiter::read(std::coroutine_handle<> handle) {
                 });
             }
         }
-        handle.resume();
     } catch (std::runtime_error error) {
-        std::cerr << error.what() << std::endl;
-        handle.destroy();
-        socket.close_socket();
+        this->error = error;
     }
+    handle.resume();
 }
 
 bool server::SocketReadAwaiter::await_ready() noexcept {
@@ -42,6 +41,12 @@ bool server::SocketReadAwaiter::await_ready() noexcept {
 
 void server::SocketReadAwaiter::await_suspend(std::coroutine_handle<> handle) {
     read(handle);
+}
+
+void server::SocketReadAwaiter::await_resume() {
+    if (size > 0) {
+        throw error;
+    }
 }
 
 void server::SocketWriteAwaiter::write(std::coroutine_handle<> handle) {
@@ -61,12 +66,10 @@ void server::SocketWriteAwaiter::write(std::coroutine_handle<> handle) {
                 });
             }
         }
-        handle.resume();
     } catch (std::runtime_error error) {
-        std::cerr << error.what() << std::endl;
-        handle.destroy();
-        socket.close_socket();
+        this->error = error;
     }
+    handle.resume();
 }
 
 bool server::SocketWriteAwaiter::await_ready() noexcept {
@@ -81,6 +84,12 @@ void server::SocketWriteAwaiter::await_suspend(std::coroutine_handle<> handle) {
     write(handle);
 }
 
+void server::SocketWriteAwaiter::await_resume() {
+    if (size > 0) {
+        throw error;
+    }
+}
+
 void server::SocketFlushAwaiter::flush(std::coroutine_handle<> handle) {
     try {
         while (buffer.remaining() > 0) {
@@ -91,12 +100,10 @@ void server::SocketFlushAwaiter::flush(std::coroutine_handle<> handle) {
                 });
             }
         }
-        handle.resume();
     } catch (std::runtime_error error) {
-        std::cerr << error.what() << std::endl;
-        handle.destroy();
-        socket.close_socket();
+        this->error = error;
     }
+    handle.resume();
 }
 
 bool server::SocketFlushAwaiter::await_ready() noexcept {
@@ -105,4 +112,10 @@ bool server::SocketFlushAwaiter::await_ready() noexcept {
 
 void server::SocketFlushAwaiter::await_suspend(std::coroutine_handle<> handle) {
     flush(handle);
+}
+
+void server::SocketFlushAwaiter::await_resume() {
+    if (buffer.remaining() > 0) {
+        throw error;
+    }
 }

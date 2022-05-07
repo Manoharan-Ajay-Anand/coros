@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <mutex>
+#include <stdexcept>
 
 server::Socket::Socket(int socket_fd, sockaddr_storage client_addr, socklen_t addr_size, 
     Server& server, event::SocketEventMonitor& event_monitor, concurrent::ThreadPool& thread_pool) 
@@ -81,15 +82,15 @@ void server::Socket::on_socket_event(bool can_read, bool can_write) {
 }
 
 server::SocketReadAwaiter server::Socket::read(uint8_t* dest, int size) {
-    return { *this, input_buffer, dest, 0, size };
+    return { *this, input_buffer, dest, 0, size, std::runtime_error("") };
 }
 
 server::SocketWriteAwaiter server::Socket::write(uint8_t* src, int size) {
-    return { *this, output_buffer, src, 0, size };
+    return { *this, output_buffer, src, 0, size, std::runtime_error("") };
 }
 
 server::SocketFlushAwaiter server::Socket::flush() {
-    return { *this, output_buffer };
+    return { *this, output_buffer, std::runtime_error("") };
 }
 
 void server::Socket::close_socket() {
@@ -97,16 +98,21 @@ void server::Socket::close_socket() {
 }
 
 server::concurrent::Future server::Socket::handle_request() {
-    while (true) {
-        std::cerr << "Handling request" << std::endl;
-        std::string input;
-        char c = '\0';
-        while (c != '\n') {
-            co_await read((uint8_t*) &c, 1);
-            input.push_back(c);
+    try {
+        while (true) {
+            std::cerr << "Handling request" << std::endl;
+            std::string input;
+            char c = '\0';
+            while (c != '\n') {
+                co_await read((uint8_t*) &c, 1);
+                input.push_back(c);
+            }
+            std::cerr << "Input: " << input << std::endl;
+            co_await write((uint8_t*) input.c_str(), input.size());
+            co_await flush();
         }
-        std::cerr << "Input: " << input << std::endl;
-        co_await write((uint8_t*) input.c_str(), input.size());
-        co_await flush();
+    } catch (std::runtime_error error) {
+        std::cerr << "Error in coroutine: " << error.what() << std::endl;
+        close_socket();
     }
 }
