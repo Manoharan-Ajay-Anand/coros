@@ -1,11 +1,10 @@
-#ifndef SOCKET_SOCKET_H
-#define SOCKET_SOCKET_H
+#ifndef SERVER_SOCKET_H
+#define SERVER_SOCKET_H
 
 #include "event/event.h"
-#include "awaiter.h"
+#include "concurrent/awaiter.h"
 #include "memory/read_socket_buffer.h"
 #include "memory/write_socket_buffer.h"
-#include "concurrent/coroutine.h"
 
 #include <cstdint>
 #include <functional>
@@ -17,7 +16,7 @@ namespace server {
     namespace concurrent {
         class ThreadPool;
     }
-
+    
     class Server;
 
     class Socket : public event::SocketHandler {
@@ -50,7 +49,6 @@ namespace server {
             SocketReadAwaiter read(uint8_t* dest, int size);
             SocketWriteAwaiter write(uint8_t* src, int size);
             SocketFlushAwaiter flush();
-            concurrent::Future handle_request();
             void close_socket();
     };
 } 

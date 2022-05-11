@@ -1,5 +1,5 @@
 #include "server.h"
-#include "socket/socket.h"
+#include "socket.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -14,7 +14,8 @@
 #include <memory>
 #include <mutex>
 
-server::Server::Server(short port) : service(std::to_string(port)) {
+server::Server::Server(short port, ServerApplication& server_application) 
+    : service(std::to_string(port)), server_application(server_application) {
 }
 
 server::Server::~Server() {
@@ -89,7 +90,7 @@ void server::Server::on_socket_event(bool can_read, bool can_write) {
         thread_pool.execute([&, socket_fd] {
             Socket* socket = socket_map.at(socket_fd).get();
             event_monitor.register_socket(socket_fd, socket);
-            socket->handle_request(); 
+            server_application.handle_socket(socket); 
         });
     }
     event_monitor.listen_for_read(server_socketfd);

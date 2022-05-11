@@ -1,7 +1,6 @@
 #ifndef SERVER_SERVER_H
 #define SERVER_SERVER_H
 
-#include "socket/socket.h"
 #include "event/event.h"
 #include "concurrent/thread_pool.h"
 
@@ -9,12 +8,33 @@
 #include <unordered_map>
 #include <string>
 #include <mutex>
-
-struct addrinfo;
+#include <netdb.h>
+#include <coroutine>
 
 namespace server {
+    class Socket;
+
+    struct Future {
+            struct promise_type {
+                Future get_return_object() { 
+                    return { std::coroutine_handle<promise_type>::from_promise(*this) }; 
+                }
+                std::suspend_never initial_suspend() { return {}; }
+                std::suspend_never final_suspend() noexcept { return {}; }
+                void unhandled_exception() {}
+                void return_void() {}
+            };
+            std::coroutine_handle<promise_type> handle;
+        };
+    
+    class ServerApplication {
+        public:
+            virtual Future handle_socket(Socket* socket) = 0;
+    };
+    
     class Server : public event::SocketHandler {
         private:
+            ServerApplication& server_application;
             event::SocketEventMonitor event_monitor;
             concurrent::ThreadPool thread_pool;
             std::mutex socket_mutex;
@@ -24,7 +44,7 @@ namespace server {
             addrinfo get_local_addr_info();
             void set_non_blocking(int socket_fd);
         public:
-            Server(short port);
+            Server(short port, ServerApplication& server_application);
             ~Server();
             void on_socket_event(bool can_read, bool can_write);
             void bootstrap();

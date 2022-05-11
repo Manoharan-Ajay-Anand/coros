@@ -1,5 +1,5 @@
-#ifndef SOCKET_AWAITER_H
-#define SOCKET_AWAITER_H
+#ifndef CONCURRENT_AWAITER_H
+#define CONCURRENT_AWAITER_H
 
 #include <cstdint>
 #include <coroutine>

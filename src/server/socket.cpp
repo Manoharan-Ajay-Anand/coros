@@ -1,8 +1,10 @@
 #include "socket.h"
-#include "server/server.h"
+#include "server.h"
 #include "concurrent/thread_pool.h"
-#include "concurrent/coroutine.h"
-
+#include "event/event.h"
+#include "concurrent/awaiter.h"
+#include "memory/read_socket_buffer.h"
+#include "memory/write_socket_buffer.h"
 
 #include <cstdint>
 #include <iostream>
@@ -95,24 +97,4 @@ server::SocketFlushAwaiter server::Socket::flush() {
 
 void server::Socket::close_socket() {
     server.destroy_socket(socket_fd);
-}
-
-server::concurrent::Future server::Socket::handle_request() {
-    try {
-        while (true) {
-            std::cerr << "Handling request" << std::endl;
-            std::string input;
-            char c = '\0';
-            while (c != '\n') {
-                co_await read((uint8_t*) &c, 1);
-                input.push_back(c);
-            }
-            std::cerr << "Input: " << input << std::endl;
-            co_await write((uint8_t*) input.c_str(), input.size());
-            co_await flush();
-        }
-    } catch (std::runtime_error error) {
-        std::cerr << "Error in coroutine: " << error.what() << std::endl;
-        close_socket();
-    }
 }
