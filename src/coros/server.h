@@ -11,7 +11,7 @@
 #include <netdb.h>
 #include <coroutine>
 
-namespace server {
+namespace coros {
     class Socket;
 
     struct Future {

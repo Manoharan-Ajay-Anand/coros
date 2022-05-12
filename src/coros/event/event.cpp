@@ -1,5 +1,4 @@
 #include "event.h"
-#include "server/server.h"
 
 #include <vector>
 #include <unordered_map>
@@ -11,18 +10,18 @@
 #include <cstring>
 #include <iostream>
 
-void server::event::SocketEventMonitor::register_socket(int socket_fd, SocketHandler* handler) {
+void coros::event::SocketEventMonitor::register_socket(int socket_fd, SocketHandler* handler) {
     std::lock_guard<std::mutex> handler_lock(handler_mutex);
     handler_map[socket_fd] = handler;
     std::cerr << "Registered socket: " << socket_fd << std::endl;
 }
 
-void server::event::SocketEventMonitor::deregister_socket(int socket_fd) {
+void coros::event::SocketEventMonitor::deregister_socket(int socket_fd) {
     std::lock_guard<std::mutex> socket_lock(handler_mutex);
     handler_map.erase(socket_fd);
 }
 
-void server::event::SocketEventMonitor::listen_for_read(int socket_fd) {
+void coros::event::SocketEventMonitor::listen_for_read(int socket_fd) {
     {
         std::lock_guard<std::mutex> event_lock(event_mutex);
         event_queue.push({ socket_fd, true, false });
@@ -30,7 +29,7 @@ void server::event::SocketEventMonitor::listen_for_read(int socket_fd) {
     events_available.notify_one();
 }
 
-void server::event::SocketEventMonitor::listen_for_write(int socket_fd) {
+void coros::event::SocketEventMonitor::listen_for_write(int socket_fd) {
     {
         std::lock_guard<std::mutex> event_lock(event_mutex);
         event_queue.push({ socket_fd, false, true });
@@ -38,7 +37,7 @@ void server::event::SocketEventMonitor::listen_for_write(int socket_fd) {
     events_available.notify_one();
 }
 
-void set_event(server::event::SocketEvent& socket_event, pollfd& pollfd) {
+void set_event(coros::event::SocketEvent& socket_event, pollfd& pollfd) {
     if (socket_event.do_read) {
         pollfd.events = pollfd.events | POLLIN;
     }
@@ -47,7 +46,7 @@ void set_event(server::event::SocketEvent& socket_event, pollfd& pollfd) {
     }
 }
 
-void server::event::SocketEventMonitor::populate_events(std::vector<pollfd>& pollfds) {
+void coros::event::SocketEventMonitor::populate_events(std::vector<pollfd>& pollfds) {
     std::unique_lock<std::mutex> event_lock(event_mutex);
     events_available.wait(event_lock, [&] { return !event_queue.empty(); });
     std::unordered_map<int , pollfd*> pollfd_map;
@@ -66,7 +65,7 @@ void server::event::SocketEventMonitor::populate_events(std::vector<pollfd>& pol
     }
 }
 
-void server::event::SocketEventMonitor::trigger_events(std::vector<pollfd>& pollfds) {
+void coros::event::SocketEventMonitor::trigger_events(std::vector<pollfd>& pollfds) {
     for (auto it = pollfds.begin(); it != pollfds.end(); it++) {
         pollfd& pfd = *it;
         bool can_read = (pfd.revents & POLLIN) == POLLIN;
@@ -79,7 +78,7 @@ void server::event::SocketEventMonitor::trigger_events(std::vector<pollfd>& poll
     } 
 }
 
-void server::event::SocketEventMonitor::start() {
+void coros::event::SocketEventMonitor::start() {
     while (true) {
         std::vector<pollfd> pollfds;
         populate_events(pollfds);

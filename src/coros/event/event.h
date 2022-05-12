@@ -9,7 +9,7 @@
 #include <condition_variable>
 #include <poll.h>
 
-namespace server {
+namespace coros {
     namespace event {
         struct SocketEvent {
             int socket_fd;

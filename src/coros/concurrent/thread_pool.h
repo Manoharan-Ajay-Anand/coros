@@ -8,7 +8,7 @@
 #include <mutex>
 #include <condition_variable>
 
-namespace server {
+namespace coros {
     namespace concurrent {
         class ThreadPool {
             private:

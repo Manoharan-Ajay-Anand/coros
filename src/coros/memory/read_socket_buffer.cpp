@@ -8,10 +8,10 @@
 #include <cerrno>
 #include <stdexcept>
 
-server::memory::SocketReadBuffer::SocketReadBuffer(int socket_fd) : SocketBuffer(socket_fd) {
+coros::memory::SocketReadBuffer::SocketReadBuffer(int socket_fd) : SocketBuffer(socket_fd) {
 }
 
-void server::memory::SocketReadBuffer::read(uint8_t* dest, int size) {
+void coros::memory::SocketReadBuffer::read(uint8_t* dest, int size) {
     if (size > remaining()) {
         throw std::runtime_error("SocketBuffer read error: Read size more than remaining");
     }
@@ -19,7 +19,7 @@ void server::memory::SocketReadBuffer::read(uint8_t* dest, int size) {
     start += size;
 }
 
-int server::memory::SocketReadBuffer::recv_socket() {
+int coros::memory::SocketReadBuffer::recv_socket() {
     compact();
     int prev_end = end;
     while (end < limit) {

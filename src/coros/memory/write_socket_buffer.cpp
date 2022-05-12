@@ -8,10 +8,10 @@
 #include <cerrno>
 #include <stdexcept>
 
-server::memory::SocketWriteBuffer::SocketWriteBuffer(int socket_fd) : SocketBuffer(socket_fd) {
+coros::memory::SocketWriteBuffer::SocketWriteBuffer(int socket_fd) : SocketBuffer(socket_fd) {
 }
 
-void server::memory::SocketWriteBuffer::write(uint8_t* src, int size) {
+void coros::memory::SocketWriteBuffer::write(uint8_t* src, int size) {
     compact();
     if (size > capacity()) {
         throw std::runtime_error("SocketBuffer write error: Write size more than capacity");
@@ -20,7 +20,7 @@ void server::memory::SocketWriteBuffer::write(uint8_t* src, int size) {
     end += size;
 }
 
-int server::memory::SocketWriteBuffer::send_socket() {
+int coros::memory::SocketWriteBuffer::send_socket() {
     int prev_start = start;
     while (start < end) {
         int size_written = send(socket_fd, data + start, remaining(), 0);

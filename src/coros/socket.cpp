@@ -14,7 +14,7 @@
 #include <mutex>
 #include <stdexcept>
 
-server::Socket::Socket(int socket_fd, sockaddr_storage client_addr, socklen_t addr_size, 
+coros::Socket::Socket(int socket_fd, sockaddr_storage client_addr, socklen_t addr_size, 
     Server& server, event::SocketEventMonitor& event_monitor, concurrent::ThreadPool& thread_pool) 
 : socket_fd(socket_fd), server(server), event_monitor(event_monitor), thread_pool(thread_pool), 
   input_buffer(socket_fd), output_buffer(socket_fd) {
@@ -25,13 +25,13 @@ server::Socket::Socket(int socket_fd, sockaddr_storage client_addr, socklen_t ad
     this->write_handler_set = false;
 }
 
-server::Socket::~Socket() {
+coros::Socket::~Socket() {
     marked_for_close = true;
     event_monitor.deregister_socket(socket_fd);
     close(socket_fd);
 }
 
-void server::Socket::listen_for_read(std::function<void()> handler) {
+void coros::Socket::listen_for_read(std::function<void()> handler) {
     std::lock_guard<std::mutex> read_lock(read_handler_mutex);
     if (read_handler_set) {
         throw std::runtime_error("Read handler already set");
@@ -41,7 +41,7 @@ void server::Socket::listen_for_read(std::function<void()> handler) {
     event_monitor.listen_for_read(socket_fd);
 }
 
-void server::Socket::listen_for_write(std::function<void()> handler) {
+void coros::Socket::listen_for_write(std::function<void()> handler) {
     std::lock_guard<std::mutex> write_lock(write_handler_mutex);
     if (write_handler_set) {
         throw std::runtime_error("Write handler already set");
@@ -51,7 +51,7 @@ void server::Socket::listen_for_write(std::function<void()> handler) {
     event_monitor.listen_for_write(socket_fd);
 }
 
-void server::Socket::on_socket_read(bool can_read) {
+void coros::Socket::on_socket_read(bool can_read) {
     std::lock_guard<std::mutex> read_lock(read_handler_mutex);
     if (!read_handler_set) {
         return;
@@ -63,7 +63,7 @@ void server::Socket::on_socket_read(bool can_read) {
     thread_pool.execute(read_handler);
 }
 
-void server::Socket::on_socket_write(bool can_write) {
+void coros::Socket::on_socket_write(bool can_write) {
     std::lock_guard<std::mutex> write_lock(write_handler_mutex);
     if (!write_handler_set) {
         return;
@@ -75,7 +75,7 @@ void server::Socket::on_socket_write(bool can_write) {
     thread_pool.execute(write_handler);
 }
 
-void server::Socket::on_socket_event(bool can_read, bool can_write) {
+void coros::Socket::on_socket_event(bool can_read, bool can_write) {
     if (marked_for_close) {
         return;
     }
@@ -83,18 +83,18 @@ void server::Socket::on_socket_event(bool can_read, bool can_write) {
     on_socket_write(can_write);
 }
 
-server::SocketReadAwaiter server::Socket::read(uint8_t* dest, int size) {
+coros::concurrent::SocketReadAwaiter coros::Socket::read(uint8_t* dest, int size) {
     return { *this, input_buffer, dest, 0, size, std::runtime_error("") };
 }
 
-server::SocketWriteAwaiter server::Socket::write(uint8_t* src, int size) {
+coros::concurrent::SocketWriteAwaiter coros::Socket::write(uint8_t* src, int size) {
     return { *this, output_buffer, src, 0, size, std::runtime_error("") };
 }
 
-server::SocketFlushAwaiter server::Socket::flush() {
+coros::concurrent::SocketFlushAwaiter coros::Socket::flush() {
     return { *this, output_buffer, std::runtime_error("") };
 }
 
-void server::Socket::close_socket() {
+void coros::Socket::close_socket() {
     server.destroy_socket(socket_fd);
 }

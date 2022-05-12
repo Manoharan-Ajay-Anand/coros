@@ -1,26 +1,26 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(Server
+project(Coros
     VERSION 1.0
-    DESCRIPTION "Server made in C++"
+    DESCRIPTION "Server based on C++ 20 coroutines"
     LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcoroutines")
 
-add_executable(Server
-    src/concurrent/awaiter.cpp
-    src/concurrent/thread_pool.cpp
-    src/event/event.cpp
-    src/memory/read_socket_buffer.cpp
-    src/memory/write_socket_buffer.cpp
-    src/memory/socket_buffer.cpp
-    src/server/server.cpp
-    src/server/socket.cpp
-    src/main.cpp)
+add_library(coros STATIC
+    src/coros/concurrent/awaiter.cpp
+    src/coros/concurrent/thread_pool.cpp
+    src/coros/event/event.cpp
+    src/coros/memory/read_socket_buffer.cpp
+    src/coros/memory/write_socket_buffer.cpp
+    src/coros/memory/socket_buffer.cpp
+    src/coros/server.cpp
+    src/coros/socket.cpp)
 
 find_package(Threads REQUIRED)
+target_include_directories(coros PUBLIC src/)
+target_link_libraries(coros PRIVATE Threads::Threads)
 
-target_include_directories(Server PRIVATE src/)
-
-target_link_libraries(Server PRIVATE Threads::Threads)
+add_executable(echo examples/echo.cpp)
+target_link_libraries(echo PRIVATE coros)

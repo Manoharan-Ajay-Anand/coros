@@ -1,14 +1,14 @@
-#include "server/server.h"
-#include "server/socket.h"
+#include "coros/server.h"
+#include "coros/socket.h"
 
 #include <iostream>
 #include <coroutine>
 #include <stdexcept>
 #include <string>
 
-class TcpEchoServer : public server::ServerApplication {
+class EchoApplication : public coros::ServerApplication {
     public:
-        server::Future handle_socket(server::Socket* socket) {
+        coros::Future handle_socket(coros::Socket* socket) {
             try {
                 while (true) {
                     std::cerr << "Handling request" << std::endl;
@@ -30,11 +30,11 @@ class TcpEchoServer : public server::ServerApplication {
 };
 
 int main() {
-    TcpEchoServer tcp_echo_server;
-    server::Server tcp_server(1025, tcp_echo_server);
+    EchoApplication echo_app;
+    coros::Server echo_server(1025, echo_app);
     std::cerr << "Starting Server..." << std::endl;
     try {
-        tcp_server.bootstrap();
+        echo_server.bootstrap();
     } catch (std::runtime_error error) {
         std::cerr << error.what() << std::endl;
     }

@@ -12,7 +12,7 @@
 #include <mutex>
 #include <atomic>
 
-namespace server {
+namespace coros {
     namespace concurrent {
         class ThreadPool;
     }
@@ -46,9 +46,9 @@ namespace server {
             void listen_for_read(std::function<void()> handler);
             void listen_for_write(std::function<void()> handler);
             void on_socket_event(bool can_read, bool can_write);
-            SocketReadAwaiter read(uint8_t* dest, int size);
-            SocketWriteAwaiter write(uint8_t* src, int size);
-            SocketFlushAwaiter flush();
+            concurrent::SocketReadAwaiter read(uint8_t* dest, int size);
+            concurrent::SocketWriteAwaiter write(uint8_t* src, int size);
+            concurrent::SocketFlushAwaiter flush();
             void close_socket();
     };
 } 

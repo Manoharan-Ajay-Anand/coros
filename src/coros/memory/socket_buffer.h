@@ -8,7 +8,7 @@
 
 #define BUFFER_LIMIT 8192
 
-namespace server {
+namespace coros {
     namespace memory {
         class SocketBuffer {
             protected:

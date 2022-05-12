@@ -6,25 +6,25 @@
 #include <stdexcept>
 #include <mutex>
 
-server::concurrent::ThreadPool::ThreadPool() : max_threads(std::thread::hardware_concurrency()) {
+coros::concurrent::ThreadPool::ThreadPool() : max_threads(std::thread::hardware_concurrency()) {
     shutdown = false;
 }
 
-server::concurrent::ThreadPool::ThreadPool(int max_threads) : max_threads(max_threads) {    
+coros::concurrent::ThreadPool::ThreadPool(int max_threads) : max_threads(max_threads) {    
 }
 
-server::concurrent::ThreadPool::~ThreadPool() {
+coros::concurrent::ThreadPool::~ThreadPool() {
     shutdown = true;
     for (auto it = threads.begin(); it != threads.end(); it++) {
         it->join();
     }
 }
 
-bool server::concurrent::ThreadPool::is_shut_down() const {
+bool coros::concurrent::ThreadPool::is_shut_down() const {
     return shutdown;
 }
 
-void server::concurrent::ThreadPool::execute_next_job() {
+void coros::concurrent::ThreadPool::execute_next_job() {
     std::function<void()> job;
     {
         std::unique_lock<std::mutex> jobs_lock(jobs_mutex);
@@ -35,7 +35,7 @@ void server::concurrent::ThreadPool::execute_next_job() {
     job();
 }
 
-void server::concurrent::ThreadPool::execute(std::function<void()> job) {
+void coros::concurrent::ThreadPool::execute(std::function<void()> job) {
     {
         std::lock_guard<std::mutex> guard(jobs_mutex);
         jobs.push(job);
@@ -46,7 +46,7 @@ void server::concurrent::ThreadPool::execute(std::function<void()> job) {
     jobs_available.notify_one();
 }
 
-void server::concurrent::thread_execute(ThreadPool& thread_pool) {
+void coros::concurrent::thread_execute(ThreadPool& thread_pool) {
     while (!thread_pool.is_shut_down()) {
         thread_pool.execute_next_job();
     }

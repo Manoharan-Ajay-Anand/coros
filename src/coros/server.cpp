@@ -14,15 +14,15 @@
 #include <memory>
 #include <mutex>
 
-server::Server::Server(short port, ServerApplication& server_application) 
+coros::Server::Server(short port, ServerApplication& server_application) 
     : service(std::to_string(port)), server_application(server_application) {
 }
 
-server::Server::~Server() {
+coros::Server::~Server() {
     close(server_socketfd);
 }
 
-addrinfo server::Server::get_local_addr_info() {
+addrinfo coros::Server::get_local_addr_info() {
     int status;
     addrinfo* res;
     addrinfo hints = {};
@@ -36,7 +36,7 @@ addrinfo server::Server::get_local_addr_info() {
     return *res;
 }
 
-void server::Server::set_non_blocking(int socket_fd) {
+void coros::Server::set_non_blocking(int socket_fd) {
     int flags = fcntl(socket_fd, F_GETFL);
     int status = fcntl(socket_fd, F_SETFL, flags | O_NONBLOCK);
     if (status == -1) {
@@ -44,7 +44,7 @@ void server::Server::set_non_blocking(int socket_fd) {
     }
 }
 
-void server::Server::bootstrap() {
+void coros::Server::bootstrap() {
     addrinfo info = get_local_addr_info(); 
     server_socketfd = socket(
         info.ai_family, info.ai_socktype, info.ai_protocol
@@ -70,7 +70,7 @@ void server::Server::bootstrap() {
     event_monitor.start();
 }
 
-void server::Server::on_socket_event(bool can_read, bool can_write) {
+void coros::Server::on_socket_event(bool can_read, bool can_write) {
     if (can_read) {
         sockaddr_storage client_addr;
         socklen_t addr_size = sizeof client_addr;
@@ -96,7 +96,7 @@ void server::Server::on_socket_event(bool can_read, bool can_write) {
     event_monitor.listen_for_read(server_socketfd);
 }
 
-void server::Server::destroy_socket(int socket_fd) {
+void coros::Server::destroy_socket(int socket_fd) {
     std::lock_guard<std::mutex> socket_lock(socket_mutex);
     socket_map.erase(socket_fd);
     std::cerr << "Destroyed Socket " << socket_fd << std::endl;

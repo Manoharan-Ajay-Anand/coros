@@ -5,7 +5,7 @@
 
 #include <cstdint>
 
-namespace server {
+namespace coros {
     namespace memory {
         class SocketWriteBuffer : public SocketBuffer {
             public:
