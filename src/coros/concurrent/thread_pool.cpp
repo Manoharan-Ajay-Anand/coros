@@ -7,47 +7,50 @@
 #include <mutex>
 
 coros::concurrent::ThreadPool::ThreadPool() : max_threads(std::thread::hardware_concurrency()) {
-    shutdown = false;
+    is_shutdown = false;
 }
 
-coros::concurrent::ThreadPool::ThreadPool(int max_threads) : max_threads(max_threads) {    
+coros::concurrent::ThreadPool::ThreadPool(int max_threads) : max_threads(max_threads) {
+    is_shutdown = false;    
 }
 
-coros::concurrent::ThreadPool::~ThreadPool() {
-    shutdown = true;
-    for (auto it = threads.begin(); it != threads.end(); it++) {
-        it->join();
+void coros::concurrent::ThreadPool::run_jobs() {
+    while (true) {
+        std::function<void()> job;
+        {
+            std::unique_lock<std::mutex> jobs_lock(jobs_mutex);
+            jobs_condition.wait(jobs_lock, [&] { return !jobs.empty() || is_shutdown;});
+            if (jobs.empty() && is_shutdown) {
+                return;
+            }
+            job = jobs.front();
+            jobs.pop();
+        }
+        job();
     }
 }
 
-bool coros::concurrent::ThreadPool::is_shut_down() const {
-    return shutdown;
-}
-
-void coros::concurrent::ThreadPool::execute_next_job() {
-    std::function<void()> job;
-    {
-        std::unique_lock<std::mutex> jobs_lock(jobs_mutex);
-        jobs_available.wait(jobs_lock, [&] { return !jobs.empty();});
-        job = jobs.front();
-        jobs.pop();
+void coros::concurrent::ThreadPool::run(std::function<void()> job) {
+    if (is_shutdown) {
+        throw std::runtime_error("ThreadPool run() error: ThreadPool already shutdown");
     }
-    job();
-}
-
-void coros::concurrent::ThreadPool::execute(std::function<void()> job) {
     {
         std::lock_guard<std::mutex> guard(jobs_mutex);
         jobs.push(job);
         if (threads.size() < max_threads) {
-            threads.push_back(std::thread(thread_execute, std::ref(*this)));
+            threads.push_back(std::thread(&ThreadPool::run_jobs, this));
         }
     }
-    jobs_available.notify_one();
+    jobs_condition.notify_one();
 }
 
-void coros::concurrent::thread_execute(ThreadPool& thread_pool) {
-    while (!thread_pool.is_shut_down()) {
-        thread_pool.execute_next_job();
+void coros::concurrent::ThreadPool::shutdown() {
+    if (is_shutdown) {
+        throw std::runtime_error("ThreadPool shutdown() error: ThreadPool already shutdown");
+    }
+    is_shutdown = true;
+    jobs_condition.notify_all();
+    for (auto it = threads.begin(); it != threads.end(); it++) {
+        it->join();
     }
 }

@@ -60,7 +60,7 @@ void coros::Socket::on_socket_read(bool can_read) {
         return event_monitor.listen_for_read(socket_fd);
     }
     read_handler_set = false;
-    thread_pool.execute(read_handler);
+    thread_pool.run(read_handler);
 }
 
 void coros::Socket::on_socket_write(bool can_write) {
@@ -72,7 +72,7 @@ void coros::Socket::on_socket_write(bool can_write) {
         return event_monitor.listen_for_write(socket_fd);
     }
     write_handler_set = false;
-    thread_pool.execute(write_handler);
+    thread_pool.run(write_handler);
 }
 
 void coros::Socket::on_socket_event(bool can_read, bool can_write) {

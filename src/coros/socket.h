@@ -1,5 +1,5 @@
-#ifndef SERVER_SOCKET_H
-#define SERVER_SOCKET_H
+#ifndef COROS_SOCKET_H
+#define COROS_SOCKET_H
 
 #include "event/event.h"
 #include "concurrent/awaiter.h"

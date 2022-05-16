@@ -1,5 +1,6 @@
 #include "coros/server.h"
 #include "coros/socket.h"
+#include "coros/concurrent/thread_pool.h"
 
 #include <iostream>
 #include <coroutine>
@@ -30,11 +31,15 @@ class EchoApplication : public coros::ServerApplication {
 };
 
 int main() {
+    coros::concurrent::ThreadPool thread_pool;
     EchoApplication echo_app;
-    coros::Server echo_server(1025, echo_app);
+    coros::Server echo_server(1025, echo_app, thread_pool);
     std::cerr << "Starting Server..." << std::endl;
     try {
         echo_server.bootstrap();
+        getchar();
+        echo_server.shutdown();
+        thread_pool.shutdown();
     } catch (std::runtime_error error) {
         std::cerr << error.what() << std::endl;
     }

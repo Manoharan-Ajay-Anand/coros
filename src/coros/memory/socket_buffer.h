@@ -1,5 +1,5 @@
-#ifndef MEMORY_SOCKET_BUFFER_H
-#define MEMORY_SOCKET_BUFFER_H
+#ifndef COROS_MEMORY_SOCKET_BUFFER_H
+#define COROS_MEMORY_SOCKET_BUFFER_H
 
 #include <cstdint>
 

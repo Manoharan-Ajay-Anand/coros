@@ -9,11 +9,15 @@
 #include <string>
 #include <cstring>
 #include <iostream>
+#include <stdexcept>
+
+coros::event::SocketEventMonitor::SocketEventMonitor() {
+    is_shutdown = false;
+}
 
 void coros::event::SocketEventMonitor::register_socket(int socket_fd, SocketHandler* handler) {
     std::lock_guard<std::mutex> handler_lock(handler_mutex);
     handler_map[socket_fd] = handler;
-    std::cerr << "Registered socket: " << socket_fd << std::endl;
 }
 
 void coros::event::SocketEventMonitor::deregister_socket(int socket_fd) {
@@ -26,7 +30,7 @@ void coros::event::SocketEventMonitor::listen_for_read(int socket_fd) {
         std::lock_guard<std::mutex> event_lock(event_mutex);
         event_queue.push({ socket_fd, true, false });
     }
-    events_available.notify_one();
+    event_condition.notify_one();
 }
 
 void coros::event::SocketEventMonitor::listen_for_write(int socket_fd) {
@@ -34,7 +38,7 @@ void coros::event::SocketEventMonitor::listen_for_write(int socket_fd) {
         std::lock_guard<std::mutex> event_lock(event_mutex);
         event_queue.push({ socket_fd, false, true });
     }
-    events_available.notify_one();
+    event_condition.notify_one();
 }
 
 void set_event(coros::event::SocketEvent& socket_event, pollfd& pollfd) {
@@ -48,9 +52,9 @@ void set_event(coros::event::SocketEvent& socket_event, pollfd& pollfd) {
 
 void coros::event::SocketEventMonitor::populate_events(std::vector<pollfd>& pollfds) {
     std::unique_lock<std::mutex> event_lock(event_mutex);
-    events_available.wait(event_lock, [&] { return !event_queue.empty(); });
+    event_condition.wait(event_lock, [&] { return !event_queue.empty() || is_shutdown; });
     std::unordered_map<int , pollfd*> pollfd_map;
-    while (!event_queue.empty()) {
+    while (!event_queue.empty() && !is_shutdown) {
         SocketEvent& event = event_queue.front();
         auto it = pollfd_map.find(event.socket_fd);
         if (it != pollfd_map.end()) {
@@ -66,7 +70,7 @@ void coros::event::SocketEventMonitor::populate_events(std::vector<pollfd>& poll
 }
 
 void coros::event::SocketEventMonitor::trigger_events(std::vector<pollfd>& pollfds) {
-    for (auto it = pollfds.begin(); it != pollfds.end(); it++) {
+    for (auto it = pollfds.begin(); it != pollfds.end() && !is_shutdown; it++) {
         pollfd& pfd = *it;
         bool can_read = (pfd.revents & POLLIN) == POLLIN;
         bool can_write = (pfd.revents & POLLOUT) == POLLOUT;
@@ -79,7 +83,7 @@ void coros::event::SocketEventMonitor::trigger_events(std::vector<pollfd>& pollf
 }
 
 void coros::event::SocketEventMonitor::start() {
-    while (true) {
+    while (!is_shutdown) {
         std::vector<pollfd> pollfds;
         populate_events(pollfds);
         int fd_count = poll(pollfds.data(), pollfds.size(), 2000);
@@ -88,4 +92,12 @@ void coros::event::SocketEventMonitor::start() {
         }
         trigger_events(pollfds);
     }
+}
+
+void coros::event::SocketEventMonitor::shutdown() {
+    if (is_shutdown) {
+        throw std::runtime_error("SocketEventMonitor shutdown() error: already shutdown");
+    }
+    is_shutdown = true;
+    event_condition.notify_one();
 }
