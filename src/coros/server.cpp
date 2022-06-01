@@ -1,6 +1,7 @@
 #include "server.h"
 #include "socket.h"
 #include "concurrent/thread_pool.h"
+#include "event/event.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -16,8 +17,9 @@
 #include <mutex>
 
 coros::Server::Server(short port, ServerApplication& server_app, 
-    concurrent::ThreadPool& thread_pool) 
-: service(std::to_string(port)), server_app(server_app), thread_pool(thread_pool) {
+    event::SocketEventMonitor& event_monitor, concurrent::ThreadPool& thread_pool) 
+: service(std::to_string(port)), server_app(server_app), thread_pool(thread_pool), 
+  event_monitor(event_monitor) {
 }
 
 addrinfo coros::Server::get_local_addr_info() {
