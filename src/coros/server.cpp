@@ -22,7 +22,7 @@ coros::Server::Server(short port, ServerApplication& server_app,
   event_monitor(event_monitor) {
 }
 
-addrinfo coros::Server::get_local_addr_info() {
+addrinfo* coros::Server::get_local_addr_info() {
     int status;
     addrinfo* res;
     addrinfo hints = {};
@@ -33,7 +33,7 @@ addrinfo coros::Server::get_local_addr_info() {
     if (status != 0) {
         throw std::runtime_error(std::string("Get Addr info: ").append(gai_strerror(status)));
     }
-    return *res;
+    return res;
 }
 
 void coros::Server::set_non_blocking(int socket_fd) {
@@ -45,14 +45,14 @@ void coros::Server::set_non_blocking(int socket_fd) {
 }
 
 void coros::Server::bootstrap() {
-    addrinfo info = get_local_addr_info(); 
+    addrinfo* info = get_local_addr_info(); 
     server_socketfd = socket(
-        info.ai_family, info.ai_socktype, info.ai_protocol
+        info->ai_family, info->ai_socktype, info->ai_protocol
     );
     if (server_socketfd == -1) {
         throw std::runtime_error(std::string("Server socket(): ").append(strerror(errno)));
     }
-    int status = bind(server_socketfd, info.ai_addr, info.ai_addrlen);
+    int status = bind(server_socketfd, info->ai_addr, info->ai_addrlen);
     if (status == -1) {
         throw std::runtime_error(std::string("Server bind(): ").append(strerror(errno)));
     }
@@ -70,6 +70,7 @@ void coros::Server::bootstrap() {
     thread_pool.run([&] {
         event_monitor.start();
     });
+    freeaddrinfo(info);
 }
 
 void coros::Server::on_socket_event(bool can_read, bool can_write) {
