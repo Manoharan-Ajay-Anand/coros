@@ -33,9 +33,11 @@ namespace coros {
             std::mutex read_handler_mutex;
             bool read_handler_set;
             std::function<void()> read_handler;
+            std::function<void()> cleanup_read;
             std::mutex write_handler_mutex;
             bool write_handler_set;
             std::function<void()> write_handler;
+            std::function<void()> cleanup_write;
             void on_socket_read(bool can_read);
             void on_socket_write(bool can_write);
         public:
@@ -43,8 +45,8 @@ namespace coros {
                 Server& server, event::SocketEventMonitor& event_monitor, 
                 concurrent::ThreadPool& thread_pool);
             ~Socket();
-            void listen_for_read(std::function<void()> handler);
-            void listen_for_write(std::function<void()> handler);
+            void listen_for_read(std::function<void()> handler, std::function<void()> cleanup);
+            void listen_for_write(std::function<void()> handler, std::function<void()> cleanup);
             void on_socket_event(bool can_read, bool can_write);
             concurrent::SocketReadAwaiter read(uint8_t* dest, int size);
             concurrent::SocketWriteAwaiter write(uint8_t* src, int size);

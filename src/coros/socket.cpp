@@ -29,25 +29,33 @@ coros::Socket::~Socket() {
     marked_for_close = true;
     event_monitor.deregister_socket(socket_fd);
     close(socket_fd);
+    if (read_handler_set) {
+        cleanup_read();
+    }
+    if (write_handler_set) {
+        cleanup_write();
+    }
 }
 
-void coros::Socket::listen_for_read(std::function<void()> handler) {
+void coros::Socket::listen_for_read(std::function<void()> handler, std::function<void()> cleanup) {
     std::lock_guard<std::mutex> read_lock(read_handler_mutex);
     if (read_handler_set) {
         throw std::runtime_error("Read handler already set");
     }
     read_handler_set = true;
     read_handler = handler;
+    cleanup_read = cleanup;
     event_monitor.listen_for_read(socket_fd);
 }
 
-void coros::Socket::listen_for_write(std::function<void()> handler) {
+void coros::Socket::listen_for_write(std::function<void()> handler, std::function<void()> cleanup) {
     std::lock_guard<std::mutex> write_lock(write_handler_mutex);
     if (write_handler_set) {
         throw std::runtime_error("Write handler already set");
     }
     write_handler_set = true;
     write_handler = handler;
+    cleanup_write = cleanup;
     event_monitor.listen_for_write(socket_fd);
 }
 

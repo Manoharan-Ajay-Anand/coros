@@ -22,7 +22,7 @@ void coros::concurrent::SocketReadAwaiter::read(std::coroutine_handle<> handle) 
             if (status == SOCKET_OP_WOULD_BLOCK) {
                 return socket.listen_for_read([&, handle]() {
                     read(handle);
-                });
+                }, [handle]() { handle.destroy(); });
             }
         }
     } catch (std::runtime_error error) {
@@ -63,7 +63,7 @@ void coros::concurrent::SocketWriteAwaiter::write(std::coroutine_handle<> handle
             if (status == SOCKET_OP_WOULD_BLOCK) {
                 return socket.listen_for_write([&, handle]() {
                     write(handle);
-                });
+                }, [handle]() { handle.destroy(); });
             }
         }
     } catch (std::runtime_error error) {
@@ -97,7 +97,7 @@ void coros::concurrent::SocketFlushAwaiter::flush(std::coroutine_handle<> handle
             if (status == SOCKET_OP_WOULD_BLOCK) {
                 return socket.listen_for_write([&, handle]() {
                     flush(handle);
-                });
+                }, [handle]() { handle.destroy(); });
             }
         }
     } catch (std::runtime_error error) {
