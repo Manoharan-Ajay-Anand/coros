@@ -2,7 +2,8 @@
 #include "server.h"
 #include "concurrent/thread_pool.h"
 #include "event/event.h"
-#include "concurrent/awaiter.h"
+#include "awaiter/read_awaiter.h"
+#include "awaiter/write_awaiter.h"
 #include "memory/read_socket_buffer.h"
 #include "memory/write_socket_buffer.h"
 
@@ -91,15 +92,15 @@ void coros::Socket::on_socket_event(bool can_read, bool can_write) {
     on_socket_write(can_write);
 }
 
-coros::concurrent::SocketReadAwaiter coros::Socket::read(uint8_t* dest, int size) {
+coros::awaiter::SocketReadAwaiter coros::Socket::read(uint8_t* dest, int size) {
     return { *this, input_buffer, dest, 0, size, std::runtime_error("") };
 }
 
-coros::concurrent::SocketWriteAwaiter coros::Socket::write(uint8_t* src, int size) {
+coros::awaiter::SocketWriteAwaiter coros::Socket::write(uint8_t* src, int size) {
     return { *this, output_buffer, src, 0, size, std::runtime_error("") };
 }
 
-coros::concurrent::SocketFlushAwaiter coros::Socket::flush() {
+coros::awaiter::SocketFlushAwaiter coros::Socket::flush() {
     return { *this, output_buffer, std::runtime_error("") };
 }
 

@@ -1,5 +1,5 @@
-#ifndef COROS_CONCURRENT_AWAITER_H
-#define COROS_CONCURRENT_AWAITER_H
+#ifndef COROS_AWAITER_WRITE_AWAITER_H
+#define COROS_AWAITER_WRITE_AWAITER_H
 
 #include <cstdint>
 #include <coroutine>
@@ -7,27 +7,12 @@
 
 namespace coros {
     namespace memory {
-        class SocketReadBuffer;
-
         class SocketWriteBuffer;
     }
 
     class Socket;
 
-    namespace concurrent {
-        struct SocketReadAwaiter {
-            Socket& socket;
-            memory::SocketReadBuffer& buffer;
-            uint8_t* dest;
-            int offset;
-            int size;
-            std::runtime_error error;
-            void read(std::coroutine_handle<> handle);
-            bool await_ready() noexcept;
-            void await_suspend(std::coroutine_handle<> handle);
-            void await_resume();
-        };
-
+    namespace awaiter {
         struct SocketWriteAwaiter {
             Socket& socket;
             memory::SocketWriteBuffer& buffer;
@@ -51,7 +36,6 @@ namespace coros {
             void await_resume();
         };
     }
-    
 }
 
 #endif

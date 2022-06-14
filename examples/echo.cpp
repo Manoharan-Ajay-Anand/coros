@@ -12,22 +12,32 @@ class EchoApplication : public coros::ServerApplication {
     public:
         coros::Future handle_socket(coros::Socket* socket) {
             try {
+                const std::string newline = "\r\n";
+                const std::string close = "close";
+                std::cout << "Handling request" << std::endl;
                 while (true) {
-                    std::cerr << "Handling request" << std::endl;
                     std::string input;
-                    char c = '\0';
-                    while (c != '\n') {
-                        co_await socket->read((uint8_t*) &c, 1);
+                    char c;
+                    co_await socket->read((uint8_t*) &c, 1);
+                    while (c != '\r' && c != '\n') {
                         input.push_back(c);
+                        co_await socket->read((uint8_t*) &c, 1);
                     }
-                    std::cerr << "Input: " << input << std::endl;
-                    co_await socket->write((uint8_t*) input.c_str(), input.size());
+                    if (input.empty()) {
+                        continue;
+                    }
+                    std::cout << "Input: " << input << std::endl;
+                    if (input == close) {
+                        break;
+                    }
+                    co_await socket->write((uint8_t*) input.data(), input.size());
+                    co_await socket->write((uint8_t*) newline.data(), newline.size());
                     co_await socket->flush();
                 }
             } catch (std::runtime_error error) {
                 std::cerr << "Error in coroutine: " << error.what() << std::endl;
-                socket->close_socket();
             }
+            socket->close_socket();
         }
 };
 

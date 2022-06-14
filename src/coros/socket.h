@@ -2,7 +2,8 @@
 #define COROS_SOCKET_H
 
 #include "event/event.h"
-#include "concurrent/awaiter.h"
+#include "awaiter/read_awaiter.h"
+#include "awaiter/write_awaiter.h"
 #include "memory/read_socket_buffer.h"
 #include "memory/write_socket_buffer.h"
 
@@ -48,9 +49,9 @@ namespace coros {
             void listen_for_read(std::function<void()> handler, std::function<void()> cleanup);
             void listen_for_write(std::function<void()> handler, std::function<void()> cleanup);
             void on_socket_event(bool can_read, bool can_write);
-            concurrent::SocketReadAwaiter read(uint8_t* dest, int size);
-            concurrent::SocketWriteAwaiter write(uint8_t* src, int size);
-            concurrent::SocketFlushAwaiter flush();
+            awaiter::SocketReadAwaiter read(uint8_t* dest, int size);
+            awaiter::SocketWriteAwaiter write(uint8_t* src, int size);
+            awaiter::SocketFlushAwaiter flush();
             void close_socket();
     };
 } 
