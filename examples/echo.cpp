@@ -1,6 +1,6 @@
 #include "coros/server.h"
 #include "coros/socket.h"
-#include "coros/concurrent/thread_pool.h"
+#include "coros/async/thread_pool.h"
 #include "coros/event/event.h"
 
 #include <iostream>
@@ -10,7 +10,7 @@
 
 class EchoApplication : public coros::ServerApplication {
     public:
-        coros::Future handle_socket(coros::Socket* socket) {
+        coros::async::Future handle_socket(coros::Socket* socket) {
             try {
                 const std::string newline = "\r\n";
                 const std::string close = "close";
@@ -42,7 +42,7 @@ class EchoApplication : public coros::ServerApplication {
 };
 
 int main() {
-    coros::concurrent::ThreadPool thread_pool;
+    coros::async::ThreadPool thread_pool;
     coros::event::SocketEventMonitor event_monitor;
     EchoApplication echo_app;
     coros::Server echo_server(1025, echo_app, event_monitor, thread_pool);

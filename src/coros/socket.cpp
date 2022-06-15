@@ -1,9 +1,9 @@
 #include "socket.h"
 #include "server.h"
-#include "concurrent/thread_pool.h"
+#include "async/thread_pool.h"
 #include "event/event.h"
-#include "awaiter/read_awaiter.h"
-#include "awaiter/write_awaiter.h"
+#include "async/read_awaiter.h"
+#include "async/write_awaiter.h"
 #include "memory/read_socket_buffer.h"
 #include "memory/write_socket_buffer.h"
 
@@ -16,7 +16,7 @@
 #include <stdexcept>
 
 coros::Socket::Socket(int socket_fd, sockaddr_storage client_addr, socklen_t addr_size, 
-    Server& server, event::SocketEventMonitor& event_monitor, concurrent::ThreadPool& thread_pool) 
+    Server& server, event::SocketEventMonitor& event_monitor, async::ThreadPool& thread_pool) 
 : socket_fd(socket_fd), server(server), event_monitor(event_monitor), thread_pool(thread_pool), 
   input_buffer(socket_fd), output_buffer(socket_fd) {
     this->client_addr = client_addr;
@@ -92,15 +92,15 @@ void coros::Socket::on_socket_event(bool can_read, bool can_write) {
     on_socket_write(can_write);
 }
 
-coros::awaiter::SocketReadAwaiter coros::Socket::read(uint8_t* dest, int size) {
+coros::async::SocketReadAwaiter coros::Socket::read(uint8_t* dest, int size) {
     return { *this, input_buffer, dest, 0, size, std::runtime_error("") };
 }
 
-coros::awaiter::SocketWriteAwaiter coros::Socket::write(uint8_t* src, int size) {
+coros::async::SocketWriteAwaiter coros::Socket::write(uint8_t* src, int size) {
     return { *this, output_buffer, src, 0, size, std::runtime_error("") };
 }
 
-coros::awaiter::SocketFlushAwaiter coros::Socket::flush() {
+coros::async::SocketFlushAwaiter coros::Socket::flush() {
     return { *this, output_buffer, std::runtime_error("") };
 }
 

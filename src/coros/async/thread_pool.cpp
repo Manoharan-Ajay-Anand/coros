@@ -6,15 +6,15 @@
 #include <stdexcept>
 #include <mutex>
 
-coros::concurrent::ThreadPool::ThreadPool() : max_threads(std::thread::hardware_concurrency()) {
+coros::async::ThreadPool::ThreadPool() : max_threads(std::thread::hardware_concurrency()) {
     is_shutdown = false;
 }
 
-coros::concurrent::ThreadPool::ThreadPool(int max_threads) : max_threads(max_threads) {
+coros::async::ThreadPool::ThreadPool(int max_threads) : max_threads(max_threads) {
     is_shutdown = false;    
 }
 
-void coros::concurrent::ThreadPool::run_jobs() {
+void coros::async::ThreadPool::run_jobs() {
     while (true) {
         std::function<void()> job;
         {
@@ -30,7 +30,7 @@ void coros::concurrent::ThreadPool::run_jobs() {
     }
 }
 
-void coros::concurrent::ThreadPool::run(std::function<void()> job) {
+void coros::async::ThreadPool::run(std::function<void()> job) {
     if (is_shutdown) {
         throw std::runtime_error("ThreadPool run() error: ThreadPool already shutdown");
     }
@@ -44,7 +44,7 @@ void coros::concurrent::ThreadPool::run(std::function<void()> job) {
     jobs_condition.notify_one();
 }
 
-void coros::concurrent::ThreadPool::shutdown() {
+void coros::async::ThreadPool::shutdown() {
     if (is_shutdown) {
         throw std::runtime_error("ThreadPool shutdown() error: ThreadPool already shutdown");
     }

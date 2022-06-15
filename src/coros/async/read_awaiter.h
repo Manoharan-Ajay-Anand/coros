@@ -1,5 +1,5 @@
-#ifndef COROS_AWAITER_READ_AWAITER_H
-#define COROS_AWAITER_READ_AWAITER_H
+#ifndef COROS_ASYNC_READ_AWAITER_H
+#define COROS_ASYNC_READ_AWAITER_H
 
 #include <cstdint>
 #include <coroutine>
@@ -12,7 +12,7 @@ namespace coros {
 
     class Socket;
 
-    namespace awaiter {
+    namespace async {
         struct SocketReadAwaiter {
             Socket& socket;
             memory::SocketReadBuffer& buffer;

@@ -7,7 +7,7 @@
 #include <iostream>
 #include <stdexcept>
 
-void coros::awaiter::SocketReadAwaiter::read(std::coroutine_handle<> handle) {
+void coros::async::SocketReadAwaiter::read(std::coroutine_handle<> handle) {
     try {
         while (size > 0) {
             if (buffer.remaining() > 0) {
@@ -30,7 +30,7 @@ void coros::awaiter::SocketReadAwaiter::read(std::coroutine_handle<> handle) {
     handle.resume();
 }
 
-bool coros::awaiter::SocketReadAwaiter::await_ready() noexcept {
+bool coros::async::SocketReadAwaiter::await_ready() noexcept {
     int sizeToRead = std::min(size, buffer.remaining());
     buffer.read(dest + offset, sizeToRead);
     offset += sizeToRead;
@@ -38,11 +38,11 @@ bool coros::awaiter::SocketReadAwaiter::await_ready() noexcept {
     return size == 0;
 }
 
-void coros::awaiter::SocketReadAwaiter::await_suspend(std::coroutine_handle<> handle) {
+void coros::async::SocketReadAwaiter::await_suspend(std::coroutine_handle<> handle) {
     read(handle);
 }
 
-void coros::awaiter::SocketReadAwaiter::await_resume() {
+void coros::async::SocketReadAwaiter::await_resume() {
     if (size > 0) {
         throw error;
     }

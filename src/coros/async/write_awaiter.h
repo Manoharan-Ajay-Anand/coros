@@ -1,5 +1,5 @@
-#ifndef COROS_AWAITER_WRITE_AWAITER_H
-#define COROS_AWAITER_WRITE_AWAITER_H
+#ifndef COROS_ASYNC_WRITE_AWAITER_H
+#define COROS_ASYNC_WRITE_AWAITER_H
 
 #include <cstdint>
 #include <coroutine>
@@ -12,7 +12,7 @@ namespace coros {
 
     class Socket;
 
-    namespace awaiter {
+    namespace async {
         struct SocketWriteAwaiter {
             Socket& socket;
             memory::SocketWriteBuffer& buffer;

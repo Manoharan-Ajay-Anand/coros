@@ -2,8 +2,8 @@
 #define COROS_SOCKET_H
 
 #include "event/event.h"
-#include "awaiter/read_awaiter.h"
-#include "awaiter/write_awaiter.h"
+#include "async/read_awaiter.h"
+#include "async/write_awaiter.h"
 #include "memory/read_socket_buffer.h"
 #include "memory/write_socket_buffer.h"
 
@@ -14,7 +14,7 @@
 #include <atomic>
 
 namespace coros {
-    namespace concurrent {
+    namespace async {
         class ThreadPool;
     }
     
@@ -27,7 +27,7 @@ namespace coros {
             socklen_t addr_size;
             Server& server;
             event::SocketEventMonitor& event_monitor;
-            concurrent::ThreadPool& thread_pool;
+            async::ThreadPool& thread_pool;
             memory::SocketReadBuffer input_buffer;
             memory::SocketWriteBuffer output_buffer;
             std::atomic_bool marked_for_close;
@@ -44,14 +44,14 @@ namespace coros {
         public:
             Socket(int socket_fd, sockaddr_storage client_addr, socklen_t addr_size, 
                 Server& server, event::SocketEventMonitor& event_monitor, 
-                concurrent::ThreadPool& thread_pool);
+                async::ThreadPool& thread_pool);
             ~Socket();
             void listen_for_read(std::function<void()> handler, std::function<void()> cleanup);
             void listen_for_write(std::function<void()> handler, std::function<void()> cleanup);
             void on_socket_event(bool can_read, bool can_write);
-            awaiter::SocketReadAwaiter read(uint8_t* dest, int size);
-            awaiter::SocketWriteAwaiter write(uint8_t* src, int size);
-            awaiter::SocketFlushAwaiter flush();
+            async::SocketReadAwaiter read(uint8_t* dest, int size);
+            async::SocketWriteAwaiter write(uint8_t* src, int size);
+            async::SocketFlushAwaiter flush();
             void close_socket();
     };
 } 

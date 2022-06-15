@@ -1,5 +1,5 @@
-#ifndef COROS_CONCURRENT_THREAD_POOL_H
-#define COROS_CONCURRENT_THREAD_POOL_H
+#ifndef COROS_ASYNC_THREAD_POOL_H
+#define COROS_ASYNC_THREAD_POOL_H
 
 #include <vector>
 #include <thread>
@@ -10,7 +10,7 @@
 #include <atomic>
 
 namespace coros {
-    namespace concurrent {
+    namespace async {
         class ThreadPool {
             private:
                 const int max_threads;
