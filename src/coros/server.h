@@ -20,7 +20,7 @@ namespace coros {
 
     class ServerApplication {
         public:
-            virtual async::Future handle_socket(Socket* socket) = 0;
+            virtual async::Future handle_socket(Socket& socket) = 0;
     };
     
     class Server : public event::SocketHandler {

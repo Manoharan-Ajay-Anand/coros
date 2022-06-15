@@ -11,6 +11,7 @@ namespace coros {
             public:
                 SocketReadBuffer(int socket_fd);
                 void read(uint8_t* dest, int size);
+                uint8_t read_b();
                 int recv_socket();
         };
     }

@@ -19,6 +19,15 @@ void coros::memory::SocketReadBuffer::read(uint8_t* dest, int size) {
     start += size;
 }
 
+uint8_t coros::memory::SocketReadBuffer::read_b() {
+    if (remaining() == 0) {
+        throw std::runtime_error("SocketBuffer read_b error: Read size more than remaining");
+    }
+    uint8_t b = *(data + start);
+    start++;
+    return b;
+}
+
 int coros::memory::SocketReadBuffer::recv_socket() {
     compact();
     int prev_end = end;

@@ -47,3 +47,34 @@ void coros::async::SocketReadAwaiter::await_resume() {
         throw error;
     }
 }
+
+void coros::async::SocketReadByteAwaiter::read(std::coroutine_handle<> handle) {
+    try {
+        if (buffer.remaining() == 0) {
+            int status = buffer.recv_socket();
+            if (status == SOCKET_OP_WOULD_BLOCK) {
+                return socket.listen_for_read([&, handle]() {
+                    read(handle);
+                }, [handle]() { handle.destroy(); });
+            }
+        }
+    } catch (std::runtime_error error) {
+        this->error = error;
+    }
+    handle.resume();
+}
+
+bool coros::async::SocketReadByteAwaiter::await_ready() noexcept {
+    return buffer.remaining() > 0;
+}
+
+void coros::async::SocketReadByteAwaiter::await_suspend(std::coroutine_handle<> handle) {
+    read(handle);
+}
+
+uint8_t coros::async::SocketReadByteAwaiter::await_resume() {
+    if (buffer.remaining() == 0) {
+        throw error;
+    }
+    return buffer.read_b();
+}

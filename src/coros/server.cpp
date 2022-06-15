@@ -92,7 +92,7 @@ void coros::Server::on_socket_event(bool can_read, bool can_write) {
         thread_pool.run([&, socket_fd] {
             Socket* socket = socket_map.at(socket_fd).get();
             event_monitor.register_socket(socket_fd, socket);
-            server_app.handle_socket(socket); 
+            server_app.handle_socket(*socket); 
         });
     }
     event_monitor.listen_for_read(server_socketfd);

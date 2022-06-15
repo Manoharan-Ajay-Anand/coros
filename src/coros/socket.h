@@ -50,6 +50,7 @@ namespace coros {
             void listen_for_write(std::function<void()> handler, std::function<void()> cleanup);
             void on_socket_event(bool can_read, bool can_write);
             async::SocketReadAwaiter read(uint8_t* dest, int size);
+            async::SocketReadByteAwaiter read_b();
             async::SocketWriteAwaiter write(uint8_t* src, int size);
             async::SocketFlushAwaiter flush();
             void close_socket();

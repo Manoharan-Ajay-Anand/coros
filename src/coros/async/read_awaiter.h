@@ -25,6 +25,16 @@ namespace coros {
             void await_suspend(std::coroutine_handle<> handle);
             void await_resume();
         };
+
+        struct SocketReadByteAwaiter {
+            Socket& socket;
+            memory::SocketReadBuffer& buffer;
+            std::runtime_error error;
+            void read(std::coroutine_handle<> handle);
+            bool await_ready() noexcept;
+            void await_suspend(std::coroutine_handle<> handle);
+            uint8_t await_resume();
+        };
     }
 }
 
