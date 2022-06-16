@@ -10,14 +10,8 @@
 
 coros::memory::SocketBuffer::SocketBuffer(int socket_fd) {
     this->socket_fd = socket_fd;
-    this->data = new uint8_t[BUFFER_LIMIT];
     this->start = 0;
     this->end = 0;
-    this->limit = BUFFER_LIMIT;
-}
-
-coros::memory::SocketBuffer::~SocketBuffer() {
-    delete[] data; 
 }
 
 void coros::memory::SocketBuffer::compact() {
@@ -27,7 +21,7 @@ void coros::memory::SocketBuffer::compact() {
     int dest = 0;
     int src = start;
     while (src < end) {
-        data[dest] = data[src];
+        buffer[dest] = buffer[src];
         dest++;
         src++;
     }
@@ -44,5 +38,5 @@ int coros::memory::SocketBuffer::remaining() {
 }
 
 int coros::memory::SocketBuffer::capacity() {
-    return limit - end;
+    return BUFFER_LIMIT - end;
 }

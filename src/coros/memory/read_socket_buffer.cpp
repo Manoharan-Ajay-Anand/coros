@@ -15,7 +15,7 @@ void coros::memory::SocketReadBuffer::read(uint8_t* dest, int size) {
     if (size > remaining()) {
         throw std::runtime_error("SocketBuffer read error: Read size more than remaining");
     }
-    std::memcpy(dest, data + start, size);
+    std::memcpy(dest, buffer.data() + start, size);
     start += size;
 }
 
@@ -23,7 +23,7 @@ uint8_t coros::memory::SocketReadBuffer::read_b() {
     if (remaining() == 0) {
         throw std::runtime_error("SocketBuffer read_b error: Read size more than remaining");
     }
-    uint8_t b = *(data + start);
+    uint8_t b = buffer[start];
     start++;
     return b;
 }
@@ -31,8 +31,8 @@ uint8_t coros::memory::SocketReadBuffer::read_b() {
 int coros::memory::SocketReadBuffer::recv_socket() {
     compact();
     int prev_end = end;
-    while (end < limit) {
-        int size_read = recv(socket_fd, data + end, capacity(), 0);
+    while (end < BUFFER_LIMIT) {
+        int size_read = recv(socket_fd, buffer.data() + end, capacity(), 0);
         if (size_read == 0) {
             throw std::runtime_error("SocketBuffer recv_socket failed: client disconnected");
         }

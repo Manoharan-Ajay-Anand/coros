@@ -2,6 +2,7 @@
 #define COROS_MEMORY_SOCKET_BUFFER_H
 
 #include <cstdint>
+#include <array>
 
 #define SOCKET_OP_CONTINUE 1
 #define SOCKET_OP_WOULD_BLOCK 0
@@ -13,14 +14,12 @@ namespace coros {
         class SocketBuffer {
             protected:
                 int socket_fd;
-                uint8_t* data;
+                std::array<uint8_t, BUFFER_LIMIT> buffer;
                 int start;
                 int end;
-                int limit;
                 SocketBuffer(int socket_fd);
                 void compact();
             public:
-                ~SocketBuffer();
                 int get_fd();
                 int remaining();
                 int capacity();

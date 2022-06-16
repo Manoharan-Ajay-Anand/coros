@@ -16,14 +16,14 @@ void coros::memory::SocketWriteBuffer::write(uint8_t* src, int size) {
     if (size > capacity()) {
         throw std::runtime_error("SocketBuffer write error: Write size more than capacity");
     }
-    std::memcpy(data + end, src, size);
+    std::memcpy(buffer.data() + end, src, size);
     end += size;
 }
 
 int coros::memory::SocketWriteBuffer::send_socket() {
     int prev_start = start;
     while (start < end) {
-        int size_written = send(socket_fd, data + start, remaining(), 0);
+        int size_written = send(socket_fd, buffer.data() + start, remaining(), 0);
         if (size_written < 0) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
                 break;
