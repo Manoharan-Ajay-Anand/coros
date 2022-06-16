@@ -53,6 +53,7 @@ void coros::Server::bootstrap() {
         throw std::runtime_error(std::string("Server socket(): ").append(strerror(errno)));
     }
     int status = bind(server_socketfd, info->ai_addr, info->ai_addrlen);
+    freeaddrinfo(info);
     if (status == -1) {
         throw std::runtime_error(std::string("Server bind(): ").append(strerror(errno)));
     }
@@ -70,7 +71,6 @@ void coros::Server::bootstrap() {
     thread_pool.run([&] {
         event_monitor.start();
     });
-    freeaddrinfo(info);
 }
 
 void coros::Server::on_socket_event(bool can_read, bool can_write) {
