@@ -13,7 +13,7 @@ class EchoApplication : public coros::ServerApplication {
         coros::async::Future handle_socket(coros::Socket& socket) {
             try {
                 const std::string newline = "\r\n";
-                const std::string close = "close";
+                const std::string close_cmd = "close";
                 while (true) {
                     std::cout << "Getting Input..." << std::endl;
                     std::string input;
@@ -28,7 +28,7 @@ class EchoApplication : public coros::ServerApplication {
                         continue;
                     }
                     std::cout << "Input: " << input << std::endl;
-                    if (input == close) {
+                    if (input == close_cmd) {
                         break;
                     }
                     co_await socket.write((uint8_t*) input.data(), input.size());

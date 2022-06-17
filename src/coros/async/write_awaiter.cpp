@@ -11,10 +11,7 @@ void coros::async::SocketWriteAwaiter::write(std::coroutine_handle<> handle) {
     try {
         while (size > 0) {
             if (buffer.capacity() > 0) {
-                int size_to_write = std::min(buffer.capacity(), size);
-                buffer.write(src + offset, size_to_write);
-                offset += size_to_write;
-                size -= size_to_write;
+                write_available();
                 continue;
             }
             int status = buffer.send_socket();
@@ -30,11 +27,15 @@ void coros::async::SocketWriteAwaiter::write(std::coroutine_handle<> handle) {
     handle.resume();
 }
 
-bool coros::async::SocketWriteAwaiter::await_ready() noexcept {
+void coros::async::SocketWriteAwaiter::write_available() {
     int size_to_write = std::min(buffer.capacity(), size);
     buffer.write(src + offset, size_to_write);
     offset += size_to_write;
     size -= size_to_write;
+}
+
+bool coros::async::SocketWriteAwaiter::await_ready() noexcept {
+    write_available();
     return size == 0;
 }
 

@@ -21,6 +21,7 @@ namespace coros {
             int size;
             std::runtime_error error;
             void read(std::coroutine_handle<> handle);
+            void read_available();
             bool await_ready() noexcept;
             void await_suspend(std::coroutine_handle<> handle);
             void await_resume();
