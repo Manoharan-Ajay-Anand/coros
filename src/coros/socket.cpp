@@ -18,9 +18,8 @@
 coros::Socket::Socket(SocketDetails details, Server& server, 
                       event::SocketEventMonitor& event_monitor, 
                       async::ThreadPool& thread_pool) 
-                              : details(details), server(server), event_monitor(event_monitor), 
-                                thread_pool(thread_pool), input_buffer(details.socket_fd), 
-                                output_buffer(details.socket_fd) {
+        : details(details), server(server), event_monitor(event_monitor), thread_pool(thread_pool), 
+          input_buffer(details.socket_fd), output_buffer(details.socket_fd) {
     this->marked_for_close = false;
     this->read_handler_set = false;
     this->write_handler_set = false;

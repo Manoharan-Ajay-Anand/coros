@@ -18,8 +18,8 @@
 
 coros::Server::Server(short port, ServerApplication& server_app, 
                       event::SocketEventMonitor& event_monitor, async::ThreadPool& thread_pool) 
-                              : service(std::to_string(port)), server_app(server_app), 
-                                thread_pool(thread_pool), event_monitor(event_monitor) {
+        : service(std::to_string(port)), server_app(server_app), thread_pool(thread_pool), 
+          event_monitor(event_monitor) {
 }
 
 addrinfo* coros::Server::get_local_addr_info() {
