@@ -35,7 +35,7 @@ namespace coros {
                 void trigger_events(std::vector<pollfd>& pollfds);
             public:
                 SocketEventMonitor();
-                void register_socket(int socket_fd, SocketHandler* handler);
+                void register_socket(int socket_fd, SocketHandler& handler);
                 void deregister_socket(int socket_fd);
                 void listen_for_read(int socket_fd);
                 void listen_for_write(int socket_fd);

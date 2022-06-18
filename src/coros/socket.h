@@ -18,13 +18,17 @@ namespace coros {
         class ThreadPool;
     }
     
+    struct SocketDetails {
+        int socket_fd;
+        sockaddr_storage client_addr;
+        socklen_t addr_size;
+    };
+
     class Server;
 
     class Socket : public event::SocketHandler {
         private:
-            int socket_fd;
-            sockaddr_storage client_addr;
-            socklen_t addr_size;
+            SocketDetails details;
             Server& server;
             event::SocketEventMonitor& event_monitor;
             async::ThreadPool& thread_pool;
@@ -42,9 +46,8 @@ namespace coros {
             void on_socket_read(bool can_read);
             void on_socket_write(bool can_write);
         public:
-            Socket(int socket_fd, sockaddr_storage client_addr, socklen_t addr_size, 
-                Server& server, event::SocketEventMonitor& event_monitor, 
-                async::ThreadPool& thread_pool);
+            Socket(SocketDetails details, Server& server, event::SocketEventMonitor& event_monitor, 
+                   async::ThreadPool& thread_pool);
             ~Socket();
             void listen_for_read(std::function<void()> handler, std::function<void()> cleanup);
             void listen_for_write(std::function<void()> handler, std::function<void()> cleanup);

@@ -17,9 +17,9 @@
 #include <mutex>
 
 coros::Server::Server(short port, ServerApplication& server_app, 
-    event::SocketEventMonitor& event_monitor, async::ThreadPool& thread_pool) 
-: service(std::to_string(port)), server_app(server_app), thread_pool(thread_pool), 
-  event_monitor(event_monitor) {
+                      event::SocketEventMonitor& event_monitor, async::ThreadPool& thread_pool) 
+                              : service(std::to_string(port)), server_app(server_app), 
+                                thread_pool(thread_pool), event_monitor(event_monitor) {
 }
 
 addrinfo* coros::Server::get_local_addr_info() {
@@ -66,7 +66,7 @@ void coros::Server::bootstrap() {
     if (status == -1) {
         throw std::runtime_error(std::string("Server listen(): ").append(strerror(errno)));
     }
-    event_monitor.register_socket(server_socketfd, this);
+    event_monitor.register_socket(server_socketfd, *this);
     event_monitor.listen_for_read(server_socketfd);
     thread_pool.run([&] {
         event_monitor.start();
@@ -86,12 +86,13 @@ void coros::Server::on_socket_event(bool can_read, bool can_write) {
         set_non_blocking(socket_fd);
         {
             std::lock_guard<std::mutex> socket_lock(socket_mutex);
-            socket_map[socket_fd] = std::make_unique<Socket>(socket_fd, 
-                client_addr, addr_size, *this, event_monitor, thread_pool);
+            SocketDetails details { socket_fd, client_addr, addr_size };
+            socket_map[socket_fd] = 
+                    std::make_unique<Socket>(details, *this, event_monitor, thread_pool);
         }
         thread_pool.run([&, socket_fd] {
             Socket* socket = socket_map.at(socket_fd).get();
-            event_monitor.register_socket(socket_fd, socket);
+            event_monitor.register_socket(socket_fd, *socket);
             server_app.handle_socket(*socket); 
         });
     }

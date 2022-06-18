@@ -15,12 +15,12 @@
 #include <mutex>
 #include <stdexcept>
 
-coros::Socket::Socket(int socket_fd, sockaddr_storage client_addr, socklen_t addr_size, 
-    Server& server, event::SocketEventMonitor& event_monitor, async::ThreadPool& thread_pool) 
-: socket_fd(socket_fd), server(server), event_monitor(event_monitor), thread_pool(thread_pool), 
-  input_buffer(socket_fd), output_buffer(socket_fd) {
-    this->client_addr = client_addr;
-    this->addr_size = addr_size;
+coros::Socket::Socket(SocketDetails details, Server& server, 
+                      event::SocketEventMonitor& event_monitor, 
+                      async::ThreadPool& thread_pool) 
+                              : details(details), server(server), event_monitor(event_monitor), 
+                                thread_pool(thread_pool), input_buffer(details.socket_fd), 
+                                output_buffer(details.socket_fd) {
     this->marked_for_close = false;
     this->read_handler_set = false;
     this->write_handler_set = false;
@@ -28,8 +28,8 @@ coros::Socket::Socket(int socket_fd, sockaddr_storage client_addr, socklen_t add
 
 coros::Socket::~Socket() {
     marked_for_close = true;
-    event_monitor.deregister_socket(socket_fd);
-    close(socket_fd);
+    event_monitor.deregister_socket(details.socket_fd);
+    close(details.socket_fd);
     if (read_handler_set) {
         cleanup_read();
     }
@@ -46,7 +46,7 @@ void coros::Socket::listen_for_read(std::function<void()> handler, std::function
     read_handler_set = true;
     read_handler = handler;
     cleanup_read = cleanup;
-    event_monitor.listen_for_read(socket_fd);
+    event_monitor.listen_for_read(details.socket_fd);
 }
 
 void coros::Socket::listen_for_write(std::function<void()> handler, std::function<void()> cleanup) {
@@ -57,7 +57,7 @@ void coros::Socket::listen_for_write(std::function<void()> handler, std::functio
     write_handler_set = true;
     write_handler = handler;
     cleanup_write = cleanup;
-    event_monitor.listen_for_write(socket_fd);
+    event_monitor.listen_for_write(details.socket_fd);
 }
 
 void coros::Socket::on_socket_read(bool can_read) {
@@ -66,7 +66,7 @@ void coros::Socket::on_socket_read(bool can_read) {
         return;
     }
     if (!can_read) {
-        return event_monitor.listen_for_read(socket_fd);
+        return event_monitor.listen_for_read(details.socket_fd);
     }
     read_handler_set = false;
     thread_pool.run(read_handler);
@@ -78,7 +78,7 @@ void coros::Socket::on_socket_write(bool can_write) {
         return;
     }
     if (!can_write) {
-        return event_monitor.listen_for_write(socket_fd);
+        return event_monitor.listen_for_write(details.socket_fd);
     }
     write_handler_set = false;
     thread_pool.run(write_handler);
@@ -109,5 +109,5 @@ coros::async::SocketFlushAwaiter coros::Socket::flush() {
 }
 
 void coros::Socket::close_socket() {
-    server.destroy_socket(socket_fd);
+    server.destroy_socket(details.socket_fd);
 }

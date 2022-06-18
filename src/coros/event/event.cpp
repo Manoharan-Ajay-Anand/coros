@@ -15,9 +15,9 @@ coros::event::SocketEventMonitor::SocketEventMonitor() {
     is_shutdown = false;
 }
 
-void coros::event::SocketEventMonitor::register_socket(int socket_fd, SocketHandler* handler) {
+void coros::event::SocketEventMonitor::register_socket(int socket_fd, SocketHandler& handler) {
     std::lock_guard<std::mutex> handler_lock(handler_mutex);
-    handler_map[socket_fd] = handler;
+    handler_map[socket_fd] = &handler;
 }
 
 void coros::event::SocketEventMonitor::deregister_socket(int socket_fd) {
