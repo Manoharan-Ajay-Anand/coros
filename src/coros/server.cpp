@@ -84,13 +84,13 @@ void coros::Server::on_socket_event(bool can_read, bool can_write) {
             throw std::runtime_error(std::string("Server accept(): ").append(strerror(errno)));
         }
         set_non_blocking(socket_fd);
-        {
-            std::lock_guard<std::mutex> socket_lock(socket_mutex);
-            SocketDetails details { socket_fd, client_addr, addr_size };
-            socket_map[socket_fd] = 
-                    std::make_unique<Socket>(details, *this, event_monitor, thread_pool);
-        }
         thread_pool.run([&, socket_fd] {
+            {
+                std::lock_guard<std::mutex> socket_lock(socket_mutex);
+                SocketDetails details { socket_fd, client_addr, addr_size };
+                socket_map[socket_fd] = 
+                        std::make_unique<Socket>(details, *this, event_monitor, thread_pool);
+            }
             Socket* socket = socket_map.at(socket_fd).get();
             event_monitor.register_socket(socket_fd, *socket);
             server_app.handle_socket(*socket); 

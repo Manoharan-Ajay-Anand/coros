@@ -16,12 +16,18 @@ coros::event::SocketEventMonitor::SocketEventMonitor() {
 }
 
 void coros::event::SocketEventMonitor::register_socket(int socket_fd, SocketHandler& handler) {
+    if (is_shutdown) {
+        return;
+    }
     std::lock_guard<std::mutex> handler_lock(handler_mutex);
     handler_map[socket_fd] = &handler;
 }
 
 void coros::event::SocketEventMonitor::deregister_socket(int socket_fd) {
-    std::lock_guard<std::mutex> socket_lock(handler_mutex);
+    if (is_shutdown) {
+        return;
+    }
+    std::lock_guard<std::mutex> handler_lock(handler_mutex);
     handler_map.erase(socket_fd);
 }
 
@@ -70,11 +76,11 @@ void coros::event::SocketEventMonitor::populate_events(std::vector<pollfd>& poll
 }
 
 void coros::event::SocketEventMonitor::trigger_events(std::vector<pollfd>& pollfds) {
+    std::lock_guard<std::mutex> handler_lock(handler_mutex);
     for (auto it = pollfds.begin(); it != pollfds.end() && !is_shutdown; it++) {
         pollfd& pfd = *it;
         bool can_read = (pfd.revents & POLLIN) == POLLIN;
         bool can_write = (pfd.revents & POLLOUT) == POLLOUT;
-        std::lock_guard<std::mutex> handler_lock(handler_mutex);
         auto handler_it = handler_map.find(pfd.fd);
         if (handler_it != handler_map.end()) {
             handler_it->second->on_socket_event(can_read, can_write);
