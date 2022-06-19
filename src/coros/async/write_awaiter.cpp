@@ -10,16 +10,15 @@
 void coros::async::SocketWriteAwaiter::write(std::coroutine_handle<> handle) {
     try {
         while (size > 0) {
-            if (buffer.capacity() > 0) {
-                write_available();
-                continue;
+            if (buffer.capacity() == 0) {
+                int status = buffer.send_socket();
+                if (status == SOCKET_OP_WOULD_BLOCK && buffer.capacity() == 0) {
+                    return socket.listen_for_write([&, handle]() {
+                        write(handle);
+                    }, [handle]() { handle.destroy(); });
+                }
             }
-            int status = buffer.send_socket();
-            if (status == SOCKET_OP_WOULD_BLOCK) {
-                return socket.listen_for_write([&, handle]() {
-                    write(handle);
-                }, [handle]() { handle.destroy(); });
-            }
+            write_available();
         }
     } catch (std::runtime_error error) {
         this->error = error;
@@ -51,13 +50,11 @@ void coros::async::SocketWriteAwaiter::await_resume() {
 
 void coros::async::SocketFlushAwaiter::flush(std::coroutine_handle<> handle) {
     try {
-        while (buffer.remaining() > 0) {
-            int status = buffer.send_socket();
-            if (status == SOCKET_OP_WOULD_BLOCK) {
-                return socket.listen_for_write([&, handle]() {
-                    flush(handle);
-                }, [handle]() { handle.destroy(); });
-            }
+        int status = buffer.send_socket();
+        if (status == SOCKET_OP_WOULD_BLOCK) {
+            return socket.listen_for_write([&, handle]() {
+                flush(handle);
+            }, [handle]() { handle.destroy(); });
         }
     } catch (std::runtime_error error) {
         this->error = error;

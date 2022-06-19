@@ -10,16 +10,15 @@
 void coros::async::SocketReadAwaiter::read(std::coroutine_handle<> handle) {
     try {
         while (size > 0) {
-            if (buffer.remaining() > 0) {
-                read_available();
-                continue;
+            if (buffer.remaining() == 0) {
+                int status = buffer.recv_socket();
+                if (status == SOCKET_OP_WOULD_BLOCK && buffer.remaining() == 0) {
+                    return socket.listen_for_read([&, handle]() {
+                        read(handle);
+                    }, [handle]() { handle.destroy(); });
+                }
             }
-            int status = buffer.recv_socket();
-            if (status == SOCKET_OP_WOULD_BLOCK) {
-                return socket.listen_for_read([&, handle]() {
-                    read(handle);
-                }, [handle]() { handle.destroy(); });
-            }
+            read_available();
         }
     } catch (std::runtime_error error) {
         this->error = error;
@@ -51,13 +50,11 @@ void coros::async::SocketReadAwaiter::await_resume() {
 
 void coros::async::SocketReadByteAwaiter::read(std::coroutine_handle<> handle) {
     try {
-        if (buffer.remaining() == 0) {
-            int status = buffer.recv_socket();
-            if (status == SOCKET_OP_WOULD_BLOCK) {
-                return socket.listen_for_read([&, handle]() {
-                    read(handle);
-                }, [handle]() { handle.destroy(); });
-            }
+        int status = buffer.recv_socket();
+        if (status == SOCKET_OP_WOULD_BLOCK && buffer.remaining() == 0) {
+            return socket.listen_for_read([&, handle]() {
+                read(handle);
+            }, [handle]() { handle.destroy(); });
         }
     } catch (std::runtime_error error) {
         this->error = error;

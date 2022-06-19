@@ -21,19 +21,15 @@ void coros::memory::SocketWriteBuffer::write(uint8_t* src, int size) {
 }
 
 int coros::memory::SocketWriteBuffer::send_socket() {
-    int prev_start = start;
     while (start < end) {
         int size_written = send(socket_fd, buffer.data() + start, remaining(), 0);
         if (size_written < 0) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                break;
+                return SOCKET_OP_WOULD_BLOCK;
             }
             throw std::runtime_error(std::string("SocketBuffer send(): ").append(strerror(errno)));
         }
         start += size_written;
     }
-    if (start > prev_start) {
-        return SOCKET_OP_CONTINUE;
-    }
-    return SOCKET_OP_WOULD_BLOCK;
+    return SOCKET_OP_CONTINUE;
 }

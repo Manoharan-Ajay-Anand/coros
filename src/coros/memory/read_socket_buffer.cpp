@@ -30,7 +30,6 @@ uint8_t coros::memory::SocketReadBuffer::read_b() {
 
 int coros::memory::SocketReadBuffer::recv_socket() {
     compact();
-    int prev_end = end;
     while (end < BUFFER_LIMIT) {
         int size_read = recv(socket_fd, buffer.data() + end, capacity(), 0);
         if (size_read == 0) {
@@ -38,14 +37,11 @@ int coros::memory::SocketReadBuffer::recv_socket() {
         }
         if (size_read < 0) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                break;
+                return SOCKET_OP_WOULD_BLOCK;
             }
             throw std::runtime_error(std::string("SocketBuffer recv(): ").append(strerror(errno)));
         }
         end += size_read;
     }
-    if (end > prev_end) {
-        return SOCKET_OP_CONTINUE;
-    }
-    return SOCKET_OP_WOULD_BLOCK;
+    return SOCKET_OP_CONTINUE;
 }
