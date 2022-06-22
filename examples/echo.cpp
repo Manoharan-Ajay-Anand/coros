@@ -6,6 +6,7 @@
 #include <coroutine>
 #include <stdexcept>
 #include <string>
+#include <cstdio>
 
 class EchoApplication : public coros::ServerApplication {
     public:
@@ -46,7 +47,7 @@ int main() {
     try {
         echo_server.setup();
         echo_server.start(true);
-        getchar();
+        std::getchar();
         echo_server.shutdown();
     } catch (std::runtime_error error) {
         std::cerr << error.what() << std::endl;
