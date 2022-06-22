@@ -1,7 +1,5 @@
 #include "coros/server.h"
 #include "coros/socket.h"
-#include "coros/async/thread_pool.h"
-#include "coros/event/event.h"
 #include "coros/async/future.h"
 
 #include <iostream>
@@ -16,7 +14,6 @@ class EchoApplication : public coros::ServerApplication {
                 const std::string newline = "\r\n";
                 const std::string close_cmd = "close";
                 while (true) {
-                    std::cout << "Getting Input..." << std::endl;
                     std::string input;
                     char c = (char) co_await socket.read_b();
                     while (c != '\n') {
@@ -28,7 +25,6 @@ class EchoApplication : public coros::ServerApplication {
                     if (input.empty()) {
                         continue;
                     }
-                    std::cout << "Input: " << input << std::endl;
                     if (input == close_cmd) {
                         break;
                     }
@@ -44,16 +40,14 @@ class EchoApplication : public coros::ServerApplication {
 };
 
 int main() {
-    coros::async::ThreadPool thread_pool;
-    coros::event::SocketEventMonitor event_monitor;
     EchoApplication echo_app;
-    coros::Server echo_server(1025, echo_app, event_monitor, thread_pool);
+    coros::Server echo_server(1025, echo_app);
     std::cerr << "Starting Server..." << std::endl;
     try {
-        echo_server.bootstrap();
+        echo_server.setup();
+        echo_server.start(true);
         getchar();
         echo_server.shutdown();
-        thread_pool.shutdown();
     } catch (std::runtime_error error) {
         std::cerr << error.what() << std::endl;
     }

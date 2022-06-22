@@ -16,10 +16,8 @@
 #include <memory>
 #include <mutex>
 
-coros::Server::Server(short port, ServerApplication& server_app, 
-                      event::SocketEventMonitor& event_monitor, async::ThreadPool& thread_pool) 
-        : service(std::to_string(port)), server_app(server_app), thread_pool(thread_pool), 
-          event_monitor(event_monitor) {
+coros::Server::Server(short port, ServerApplication& server_app) 
+        : service(std::to_string(port)), server_app(server_app) {
 }
 
 addrinfo* coros::Server::get_local_addr_info() {
@@ -44,7 +42,7 @@ void coros::Server::set_non_blocking(int socket_fd) {
     }
 }
 
-void coros::Server::bootstrap() {
+void coros::Server::setup() {
     addrinfo* info = get_local_addr_info(); 
     server_socketfd = socket(
         info->ai_family, info->ai_socktype, info->ai_protocol
@@ -68,9 +66,6 @@ void coros::Server::bootstrap() {
     }
     event_monitor.register_socket(server_socketfd, *this);
     event_monitor.listen_for_read(server_socketfd);
-    thread_pool.run([&] {
-        event_monitor.start();
-    });
 }
 
 void coros::Server::on_socket_event(bool can_read, bool can_write) {
@@ -104,9 +99,23 @@ void coros::Server::destroy_socket(int socket_fd) {
     socket_map.erase(socket_fd);
 }
 
+void coros::Server::start(bool start_async) {
+    if (start_async) {
+        return thread_pool.run([&] { event_monitor.start(); });
+    }
+    event_monitor.start();
+}
+
 void coros::Server::shutdown() {
     event_monitor.shutdown();
-    std::lock_guard<std::mutex> socket_lock(socket_mutex);
-    socket_map.clear();
+    thread_pool.shutdown();
     close(server_socketfd);
+}
+
+void coros::Server::register_socket_event(int socket_fd, SocketHandler& handler) {
+    event_monitor.register_socket(socket_fd, handler);
+}
+
+void coros::Server::deregister_socket_event(int socket_fd) {
+    event_monitor.deregister_socket(socket_fd);
 }
