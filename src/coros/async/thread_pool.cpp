@@ -31,11 +31,11 @@ void coros::async::ThreadPool::run_jobs() {
 }
 
 void coros::async::ThreadPool::run(std::function<void()> job) {
-    if (is_shutdown) {
-        throw std::runtime_error("ThreadPool run() error: ThreadPool already shutdown");
-    }
     {
         std::lock_guard<std::mutex> guard(jobs_mutex);
+        if (is_shutdown) {
+            throw std::runtime_error("ThreadPool run() error: ThreadPool already shutdown");
+        }
         jobs.push(job);
         if (threads.size() < max_threads) {
             threads.push_back(std::thread(&ThreadPool::run_jobs, this));
@@ -45,10 +45,13 @@ void coros::async::ThreadPool::run(std::function<void()> job) {
 }
 
 void coros::async::ThreadPool::shutdown() {
-    if (is_shutdown) {
-        throw std::runtime_error("ThreadPool shutdown() error: ThreadPool already shutdown");
+    {
+        std::lock_guard<std::mutex> guard(jobs_mutex);
+        if (is_shutdown) {
+            throw std::runtime_error("ThreadPool shutdown() error: ThreadPool already shutdown");
+        }
+        is_shutdown = true;
     }
-    is_shutdown = true;
     jobs_condition.notify_all();
     for (auto it = threads.begin(); it != threads.end(); it++) {
         it->join();

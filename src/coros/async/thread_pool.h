@@ -7,14 +7,13 @@
 #include <functional>
 #include <mutex>
 #include <condition_variable>
-#include <atomic>
 
 namespace coros {
     namespace async {
         class ThreadPool {
             private:
                 const int max_threads;
-                std::atomic_bool is_shutdown;
+                bool is_shutdown;
                 std::vector<std::thread> threads;
                 std::queue<std::function<void()>> jobs;
                 std::mutex jobs_mutex;

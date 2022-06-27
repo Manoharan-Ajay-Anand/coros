@@ -8,7 +8,6 @@
 #include <functional>
 #include <condition_variable>
 #include <poll.h>
-#include <atomic>
 
 namespace coros {
     namespace event {
@@ -25,7 +24,7 @@ namespace coros {
 
         class SocketEventMonitor {
             private:
-                std::atomic_bool is_shutdown;
+                bool is_shutdown;
                 std::mutex event_mutex;
                 std::queue<SocketEvent> event_queue;
                 std::condition_variable event_condition;
