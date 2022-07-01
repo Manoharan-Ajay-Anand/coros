@@ -34,6 +34,7 @@ void coros::async::SocketReadAwaiter::read_available() {
 }
 
 bool coros::async::SocketReadAwaiter::await_ready() noexcept {
+    read_mutex.lock();
     read_available();
     return size == 0;
 }
@@ -43,6 +44,7 @@ void coros::async::SocketReadAwaiter::await_suspend(std::coroutine_handle<> hand
 }
 
 void coros::async::SocketReadAwaiter::await_resume() {
+    read_mutex.unlock();
     if (size > 0) {
         throw error;
     }
@@ -63,6 +65,7 @@ void coros::async::SocketReadByteAwaiter::read(std::coroutine_handle<> handle) {
 }
 
 bool coros::async::SocketReadByteAwaiter::await_ready() noexcept {
+    read_mutex.lock();
     return buffer.remaining() > 0;
 }
 
@@ -71,6 +74,7 @@ void coros::async::SocketReadByteAwaiter::await_suspend(std::coroutine_handle<> 
 }
 
 uint8_t coros::async::SocketReadByteAwaiter::await_resume() {
+    read_mutex.unlock();
     if (buffer.remaining() == 0) {
         throw error;
     }

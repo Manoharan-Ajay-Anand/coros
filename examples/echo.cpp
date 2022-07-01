@@ -7,21 +7,22 @@
 #include <stdexcept>
 #include <string>
 #include <cstdio>
+#include <memory>
 
 class EchoApplication : public coros::ServerApplication {
     public:
-        coros::async::Future handle_socket(coros::Socket& socket) {
+        coros::async::Future handle_socket(std::unique_ptr<coros::Socket> socket) {
             try {
                 const std::string newline = "\r\n";
                 const std::string close_cmd = "close";
                 while (true) {
                     std::string input;
-                    char c = (char) co_await socket.read_b();
+                    char c = (char) co_await socket->read_b();
                     while (c != '\n') {
                         if (c != '\r') {
                             input.push_back(c);
                         }
-                        c = (char) co_await socket.read_b();
+                        c = (char) co_await socket->read_b();
                     }
                     if (input.empty()) {
                         continue;
@@ -29,14 +30,14 @@ class EchoApplication : public coros::ServerApplication {
                     if (input == close_cmd) {
                         break;
                     }
-                    co_await socket.write((uint8_t*) input.data(), input.size());
-                    co_await socket.write((uint8_t*) newline.data(), newline.size());
-                    co_await socket.flush();
+                    co_await socket->write((uint8_t*) input.data(), input.size());
+                    co_await socket->write((uint8_t*) newline.data(), newline.size());
+                    co_await socket->flush();
                 }
             } catch (std::runtime_error error) {
                 std::cerr << "Error in coroutine: " << error.what() << std::endl;
             }
-            socket.close_socket();
+            socket->close_socket();
         }
 };
 

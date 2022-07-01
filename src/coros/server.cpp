@@ -81,22 +81,12 @@ void coros::Server::on_socket_event(bool can_read, bool can_write) {
         set_non_blocking(socket_fd);
         SocketDetails details { socket_fd, client_addr, addr_size };
         thread_pool.run([&, details] {
-            {
-                std::lock_guard<std::mutex> socket_lock(socket_mutex);
-                socket_map[details.socket_fd] = 
-                        std::make_unique<Socket>(details, *this, event_monitor, thread_pool);
-            }
-            Socket* socket = socket_map.at(details.socket_fd).get();
-            event_monitor.register_socket(details.socket_fd, *socket);
-            server_app.handle_socket(*socket); 
+            server_app.handle_socket(
+                std::make_unique<Socket>(details, event_monitor, thread_pool)
+            ); 
         });
     }
     event_monitor.listen_for_read(server_socketfd);
-}
-
-void coros::Server::destroy_socket(int socket_fd) {
-    std::lock_guard<std::mutex> socket_lock(socket_mutex);
-    socket_map.erase(socket_fd);
 }
 
 void coros::Server::start(bool start_async) {

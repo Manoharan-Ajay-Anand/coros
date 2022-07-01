@@ -6,9 +6,7 @@
 #include "async/thread_pool.h"
 
 #include <memory>
-#include <unordered_map>
 #include <string>
-#include <mutex>
 #include <netdb.h>
 #include <coroutine>
 
@@ -17,7 +15,7 @@ namespace coros {
 
     class ServerApplication {
         public:
-            virtual async::Future handle_socket(Socket& socket) = 0;
+            virtual async::Future handle_socket(std::unique_ptr<Socket> socket) = 0;
     };
     
     class Server : public event::SocketHandler {
@@ -25,8 +23,6 @@ namespace coros {
             ServerApplication& server_app;
             event::SocketEventMonitor event_monitor;
             async::ThreadPool thread_pool;
-            std::mutex socket_mutex;
-            std::unordered_map<int, std::unique_ptr<Socket>> socket_map;
             std::string service;
             int server_socketfd;
             addrinfo* get_local_addr_info();
@@ -34,7 +30,6 @@ namespace coros {
         public:
             Server(short port, ServerApplication& server_app);
             void on_socket_event(bool can_read, bool can_write);
-            void destroy_socket(int socket_fd);
             void setup();
             void start(bool start_async);
             void shutdown();

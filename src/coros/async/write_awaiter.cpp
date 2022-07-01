@@ -34,6 +34,7 @@ void coros::async::SocketWriteAwaiter::write_available() {
 }
 
 bool coros::async::SocketWriteAwaiter::await_ready() noexcept {
+    write_mutex.lock();
     write_available();
     return size == 0;
 }
@@ -43,6 +44,7 @@ void coros::async::SocketWriteAwaiter::await_suspend(std::coroutine_handle<> han
 }
 
 void coros::async::SocketWriteAwaiter::await_resume() {
+    write_mutex.unlock();
     if (size > 0) {
         throw error;
     }
@@ -63,6 +65,7 @@ void coros::async::SocketFlushAwaiter::flush(std::coroutine_handle<> handle) {
 }
 
 bool coros::async::SocketFlushAwaiter::await_ready() noexcept {
+    write_mutex.lock();
     return buffer.remaining() == 0;
 }
 
@@ -71,6 +74,7 @@ void coros::async::SocketFlushAwaiter::await_suspend(std::coroutine_handle<> han
 }
 
 void coros::async::SocketFlushAwaiter::await_resume() {
+    write_mutex.unlock();
     if (buffer.remaining() > 0) {
         throw error;
     }
