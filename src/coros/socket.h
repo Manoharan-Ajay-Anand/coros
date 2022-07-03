@@ -10,7 +10,6 @@
 #include <cstdint>
 #include <functional>
 #include <sys/socket.h>
-#include <mutex>
 #include <atomic>
 
 namespace coros {
@@ -34,11 +33,9 @@ namespace coros {
             memory::SocketReadBuffer input_buffer;
             memory::SocketWriteBuffer output_buffer;
             std::atomic_bool marked_for_close;
-            std::mutex read_mutex;
             bool read_handler_set;
             std::function<void()> read_handler;
             std::function<void()> cleanup_read;
-            std::mutex write_mutex;
             bool write_handler_set;
             std::function<void()> write_handler;
             std::function<void()> cleanup_write;

@@ -16,7 +16,6 @@ namespace coros {
     namespace async {
         struct SocketReadAwaiter {
             Socket& socket;
-            std::mutex& read_mutex;
             memory::SocketReadBuffer& buffer;
             uint8_t* dest;
             int offset;
@@ -31,7 +30,6 @@ namespace coros {
 
         struct SocketReadByteAwaiter {
             Socket& socket;
-            std::mutex& read_mutex;
             memory::SocketReadBuffer& buffer;
             std::runtime_error error;
             void read(std::coroutine_handle<> handle);

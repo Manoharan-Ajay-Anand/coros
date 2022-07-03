@@ -51,17 +51,17 @@ void set_event(coros::event::SocketEvent& socket_event, pollfd& pollfd) {
 }
 
 void coros::event::SocketEventMonitor::populate_events(std::vector<pollfd>& pollfds) {
-    std::unordered_map<int , pollfd*> pollfd_map;
+    std::unordered_map<int , int> pollfd_map;
     while (!event_queue.empty()) {
         SocketEvent& event = event_queue.front();
         auto it = pollfd_map.find(event.socket_fd);
         if (it != pollfd_map.end()) {
-            set_event(event, *(it->second));
+            set_event(event, pollfds[it->second]);
         } else {
             pollfd pfd { event.socket_fd, 0, 0 } ;
             set_event(event, pfd);
             pollfds.push_back(pfd);
-            pollfd_map[event.socket_fd] = &(pollfds.back());
+            pollfd_map[event.socket_fd] = pollfds.size() - 1;
         }
         event_queue.pop();
     }

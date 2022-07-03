@@ -16,7 +16,6 @@ namespace coros {
     namespace async {
         struct SocketWriteAwaiter {
             Socket& socket;
-            std::mutex& write_mutex;
             memory::SocketWriteBuffer& buffer;
             uint8_t* src;
             int offset;
@@ -31,7 +30,6 @@ namespace coros {
 
         struct SocketFlushAwaiter {
             Socket& socket;
-            std::mutex& write_mutex;
             memory::SocketWriteBuffer& buffer;
             std::runtime_error error;
             void flush(std::coroutine_handle<> handle);

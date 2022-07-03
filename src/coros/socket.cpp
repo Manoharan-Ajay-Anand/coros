@@ -12,7 +12,6 @@
 #include <string>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <mutex>
 #include <stdexcept>
 
 coros::Socket::Socket(SocketDetails details, event::SocketEventMonitor& event_monitor, 
@@ -86,19 +85,19 @@ void coros::Socket::on_socket_event(bool can_read, bool can_write) {
 }
 
 coros::async::SocketReadAwaiter coros::Socket::read(uint8_t* dest, int size) {
-    return { *this, read_mutex, input_buffer, dest, 0, size, std::runtime_error("") };
+    return { *this, input_buffer, dest, 0, size, std::runtime_error("") };
 }
 
 coros::async::SocketReadByteAwaiter coros::Socket::read_b() {
-    return { *this, read_mutex, input_buffer, std::runtime_error("") };
+    return { *this, input_buffer, std::runtime_error("") };
 }
 
 coros::async::SocketWriteAwaiter coros::Socket::write(uint8_t* src, int size) {
-    return { *this, write_mutex, output_buffer, src, 0, size, std::runtime_error("") };
+    return { *this, output_buffer, src, 0, size, std::runtime_error("") };
 }
 
 coros::async::SocketFlushAwaiter coros::Socket::flush() {
-    return { *this, write_mutex, output_buffer, std::runtime_error("") };
+    return { *this, output_buffer, std::runtime_error("") };
 }
 
 void coros::Socket::close_socket() {
