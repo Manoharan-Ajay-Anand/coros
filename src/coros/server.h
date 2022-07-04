@@ -15,7 +15,8 @@ namespace coros {
 
     class ServerApplication {
         public:
-            virtual async::Future handle_socket(std::unique_ptr<Socket> socket) = 0;
+            virtual async::Future handle_socket(std::unique_ptr<Socket> socket_ptr) = 0;
+            virtual void shutdown() = 0;
     };
     
     class Server : public event::SocketHandler {

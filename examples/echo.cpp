@@ -8,10 +8,20 @@
 #include <string>
 #include <cstdio>
 #include <memory>
+#include <mutex>
+#include <vector>
 
 class EchoApplication : public coros::ServerApplication {
+    private:
+        std::mutex sockets_mutex;
+        std::vector<std::unique_ptr<coros::Socket>> sockets;
     public:
-        coros::async::Future handle_socket(std::unique_ptr<coros::Socket> socket) {
+        coros::async::Future handle_socket(std::unique_ptr<coros::Socket> socket_ptr) {
+            coros::Socket* socket = socket_ptr.get();
+            {
+                std::lock_guard<std::mutex> sockets_lock(sockets_mutex);
+                sockets.push_back(std::move(socket_ptr));
+            }
             try {
                 const std::string newline = "\r\n";
                 const std::string close_cmd = "close";
@@ -39,19 +49,28 @@ class EchoApplication : public coros::ServerApplication {
             }
             socket->close_socket();
         }
+
+        void shutdown() {
+            sockets.clear();
+        }
 };
+
+
+void start_server(coros::Server& server) {
+    try {
+        server.setup();
+        server.start(true);
+        std::getchar();
+        server.shutdown();
+    } catch (std::runtime_error error) {
+        std::cerr << error.what() << std::endl;
+    }
+}
 
 int main() {
     EchoApplication echo_app;
     coros::Server echo_server(1025, echo_app);
-    std::cerr << "Starting Server..." << std::endl;
-    try {
-        echo_server.setup();
-        echo_server.start(true);
-        std::getchar();
-        echo_server.shutdown();
-    } catch (std::runtime_error error) {
-        std::cerr << error.what() << std::endl;
-    }
+    std::cout << "Starting Server..." << std::endl;
+    start_server(echo_server);
     return 0;
 }

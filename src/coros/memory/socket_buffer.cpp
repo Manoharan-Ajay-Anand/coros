@@ -12,6 +12,7 @@ coros::memory::SocketBuffer::SocketBuffer(int socket_fd) {
     this->socket_fd = socket_fd;
     this->start = 0;
     this->end = 0;
+    this->is_closed = false;
 }
 
 void coros::memory::SocketBuffer::compact() {
@@ -39,4 +40,8 @@ int coros::memory::SocketBuffer::remaining() {
 
 int coros::memory::SocketBuffer::capacity() {
     return BUFFER_LIMIT - end;
+}
+
+void coros::memory::SocketBuffer::close() {
+    is_closed = true;
 }

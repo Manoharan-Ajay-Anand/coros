@@ -26,35 +26,30 @@ coros::Socket::Socket(SocketDetails details, event::SocketEventMonitor& event_mo
 
 coros::Socket::~Socket() {
     close_socket();
-    if (read_handler_set) {
-        cleanup_read();
-    }
-    if (write_handler_set) {
-        cleanup_write();
-    }
 }
 
-void coros::Socket::listen_for_read(std::function<void()> handler, std::function<void()> cleanup) {
+void coros::Socket::listen_for_read(std::function<void()> handler) {
+    std::lock_guard<std::mutex> read_lock(read_mutex);
     if (read_handler_set) {
         throw std::runtime_error("Read handler already set");
     }
     read_handler_set = true;
     read_handler = handler;
-    cleanup_read = cleanup;
     event_monitor.listen_for_read(details.socket_fd);
 }
 
-void coros::Socket::listen_for_write(std::function<void()> handler, std::function<void()> cleanup) {
+void coros::Socket::listen_for_write(std::function<void()> handler) {
+    std::lock_guard<std::mutex> write_lock(write_mutex);
     if (write_handler_set) {
         throw std::runtime_error("Write handler already set");
     }
     write_handler_set = true;
     write_handler = handler;
-    cleanup_write = cleanup;
     event_monitor.listen_for_write(details.socket_fd);
 }
 
 void coros::Socket::on_socket_read(bool can_read) {
+    std::lock_guard<std::mutex> read_lock(read_mutex);
     if (!read_handler_set) {
         return;
     }
@@ -66,6 +61,7 @@ void coros::Socket::on_socket_read(bool can_read) {
 }
 
 void coros::Socket::on_socket_write(bool can_write) {
+    std::lock_guard<std::mutex> write_lock(write_mutex);
     if (!write_handler_set) {
         return;
     }
@@ -101,10 +97,25 @@ coros::async::SocketFlushAwaiter coros::Socket::flush() {
 }
 
 void coros::Socket::close_socket() {
-    if (marked_for_close) {
+    if (marked_for_close.exchange(true)) {
         return;
     }
-    marked_for_close = true;
     close(details.socket_fd);
+    input_buffer.close();
+    output_buffer.close();
     event_monitor.deregister_socket(details.socket_fd);
+    {
+        std::lock_guard<std::mutex> read_lock(read_mutex);
+        if (read_handler_set) {
+            read_handler_set = false;
+            read_handler();
+        }
+    }
+    {
+        std::lock_guard<std::mutex> write_lock(write_mutex);
+        if (write_handler_set) {
+            write_handler_set = false;
+            write_handler();
+        }
+    }
 }

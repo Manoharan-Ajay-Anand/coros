@@ -15,7 +15,7 @@ void coros::async::SocketReadAwaiter::read(std::coroutine_handle<> handle) {
                 if (status == SOCKET_OP_WOULD_BLOCK && buffer.remaining() == 0) {
                     return socket.listen_for_read([&, handle]() {
                         read(handle);
-                    }, [handle]() { handle.destroy(); });
+                    });
                 }
             }
             read_available();
@@ -54,7 +54,7 @@ void coros::async::SocketReadByteAwaiter::read(std::coroutine_handle<> handle) {
         if (status == SOCKET_OP_WOULD_BLOCK && buffer.remaining() == 0) {
             return socket.listen_for_read([&, handle]() {
                 read(handle);
-            }, [handle]() { handle.destroy(); });
+            });
         }
     } catch (std::runtime_error error) {
         this->error = error;

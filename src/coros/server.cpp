@@ -100,6 +100,7 @@ void coros::Server::shutdown() {
     event_monitor.shutdown();
     thread_pool.shutdown();
     close(server_socketfd);
+    server_app.shutdown();
 }
 
 void coros::Server::run_async(std::function<void()> job) {
