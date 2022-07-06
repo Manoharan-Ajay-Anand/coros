@@ -13,11 +13,7 @@
 namespace coros {
     class Socket;
 
-    class ServerApplication {
-        public:
-            virtual async::Future handle_socket(std::unique_ptr<Socket> socket_ptr) = 0;
-            virtual void shutdown() = 0;
-    };
+    class ServerApplication;
     
     class Server : public event::SocketHandler {
         private:

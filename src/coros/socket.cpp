@@ -24,10 +24,6 @@ coros::Socket::Socket(SocketDetails details, event::SocketEventMonitor& event_mo
     event_monitor.register_socket(details.socket_fd, *this);
 }
 
-coros::Socket::~Socket() {
-    close_socket();
-}
-
 void coros::Socket::listen_for_read(std::function<void()> handler) {
     std::lock_guard<std::mutex> read_lock(read_mutex);
     if (read_handler_set) {
@@ -94,6 +90,10 @@ coros::async::SocketWriteAwaiter coros::Socket::write(uint8_t* src, int size) {
 
 coros::async::SocketFlushAwaiter coros::Socket::flush() {
     return { *this, output_buffer, std::runtime_error("") };
+}
+
+int coros::Socket::get_fd() {
+    return details.socket_fd;
 }
 
 void coros::Socket::close_socket() {

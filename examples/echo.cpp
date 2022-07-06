@@ -1,4 +1,5 @@
 #include "coros/server.h"
+#include "coros/app.h"
 #include "coros/socket.h"
 #include "coros/async/future.h"
 
@@ -12,16 +13,8 @@
 #include <vector>
 
 class EchoApplication : public coros::ServerApplication {
-    private:
-        std::mutex sockets_mutex;
-        std::vector<std::unique_ptr<coros::Socket>> sockets;
     public:
-        coros::async::Future handle_socket(std::unique_ptr<coros::Socket> socket_ptr) {
-            coros::Socket* socket = socket_ptr.get();
-            {
-                std::lock_guard<std::mutex> sockets_lock(sockets_mutex);
-                sockets.push_back(std::move(socket_ptr));
-            }
+        coros::async::Future on_request(std::shared_ptr<coros::Socket> socket) {
             try {
                 const std::string newline = "\r\n";
                 const std::string close_cmd = "close";
@@ -48,10 +41,6 @@ class EchoApplication : public coros::ServerApplication {
                 std::cerr << "Error in coroutine: " << error.what() << std::endl;
             }
             socket->close_socket();
-        }
-
-        void shutdown() {
-            sockets.clear();
         }
 };
 

@@ -23,8 +23,6 @@ namespace coros {
         socklen_t addr_size;
     };
 
-    class Server;
-
     class Socket : public event::SocketHandler {
         private:
             SocketDetails details;
@@ -44,7 +42,6 @@ namespace coros {
         public:
             Socket(SocketDetails details, event::SocketEventMonitor& event_monitor, 
                    async::ThreadPool& thread_pool);
-            ~Socket();
             void listen_for_read(std::function<void()> handler);
             void listen_for_write(std::function<void()> handler);
             void on_socket_event(bool can_read, bool can_write);
@@ -52,6 +49,7 @@ namespace coros {
             async::SocketReadByteAwaiter read_b();
             async::SocketWriteAwaiter write(uint8_t* src, int size);
             async::SocketFlushAwaiter flush();
+            int get_fd();
             void close_socket();
     };
 } 

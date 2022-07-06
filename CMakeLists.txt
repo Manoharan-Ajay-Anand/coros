@@ -16,6 +16,7 @@ add_library(coros STATIC
     src/coros/memory/read_socket_buffer.cpp
     src/coros/memory/write_socket_buffer.cpp
     src/coros/memory/socket_buffer.cpp
+    src/coros/app.cpp
     src/coros/server.cpp
     src/coros/socket.cpp)
 

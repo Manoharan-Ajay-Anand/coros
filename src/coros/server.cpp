@@ -1,5 +1,6 @@
 #include "server.h"
 #include "socket.h"
+#include "app.h"
 #include "async/thread_pool.h"
 #include "event/event.h"
 
@@ -82,7 +83,7 @@ void coros::Server::on_socket_event(bool can_read, bool can_write) {
         SocketDetails details { socket_fd, client_addr, addr_size };
         thread_pool.run([&, details] {
             server_app.handle_socket(
-                std::make_unique<Socket>(details, event_monitor, thread_pool)
+                std::make_shared<Socket>(details, event_monitor, thread_pool)
             ); 
         });
     }
@@ -98,9 +99,9 @@ void coros::Server::start(bool start_async) {
 
 void coros::Server::shutdown() {
     event_monitor.shutdown();
+    server_app.shutdown();
     thread_pool.shutdown();
     close(server_socketfd);
-    server_app.shutdown();
 }
 
 void coros::Server::run_async(std::function<void()> job) {
