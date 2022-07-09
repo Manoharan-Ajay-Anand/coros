@@ -14,19 +14,23 @@
 
 class EchoApplication : public coros::ServerApplication {
     public:
+        coros::async::AwaitableFuture get_input_string(coros::Socket* socket, std::string& input) {
+            char c = (char) co_await socket->read_b();
+            while (c != '\n') {
+                if (c != '\r') {
+                    input.push_back(c);
+                }
+                c = (char) co_await socket->read_b();
+            }
+        }
+
         coros::async::Future on_request(std::shared_ptr<coros::Socket> socket) {
             try {
                 const std::string newline = "\r\n";
                 const std::string close_cmd = "close";
                 while (true) {
                     std::string input;
-                    char c = (char) co_await socket->read_b();
-                    while (c != '\n') {
-                        if (c != '\r') {
-                            input.push_back(c);
-                        }
-                        c = (char) co_await socket->read_b();
-                    }
+                    co_await get_input_string(socket.get(), input);
                     if (input.empty()) {
                         continue;
                     }
