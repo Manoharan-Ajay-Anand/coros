@@ -104,6 +104,10 @@ coros::async::SocketWriteAwaiter coros::Socket::write(uint8_t* src, int size) {
     return { *this, output_buffer, src, 0, size, std::runtime_error("") };
 }
 
+coros::async::SocketWriteByteAwaiter coros::Socket::write_b(uint8_t b) {
+    return { *this, output_buffer, b, std::runtime_error("") };
+}
+
 coros::async::SocketFlushAwaiter coros::Socket::flush() {
     return { *this, output_buffer, std::runtime_error("") };
 }

@@ -11,6 +11,7 @@ namespace coros {
             public:
                 SocketWriteBuffer(int socket_fd);
                 void write(uint8_t* src, int size);
+                void write_b(uint8_t b);
                 int send_socket();
         };
     }

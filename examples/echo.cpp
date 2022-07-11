@@ -7,10 +7,10 @@
 #include <coroutine>
 #include <stdexcept>
 #include <string>
-#include <cstdio>
 #include <memory>
 #include <mutex>
 #include <vector>
+#include <cstdint>
 
 class EchoApplication : public coros::ServerApplication {
     public:
@@ -24,9 +24,15 @@ class EchoApplication : public coros::ServerApplication {
             }
         }
 
+        coros::async::AwaitableFuture write_input_string(coros::Socket* socket, std::string& input) {
+            const std::string newline = "\r\n";
+            co_await socket->write((uint8_t*) input.data(), input.size());
+            co_await socket->write((uint8_t*) newline.data(), newline.size());
+            co_await socket->flush();
+        }
+
         coros::async::Future on_request(std::shared_ptr<coros::Socket> socket) {
             try {
-                const std::string newline = "\r\n";
                 const std::string close_cmd = "close";
                 while (true) {
                     std::string input;
@@ -37,9 +43,7 @@ class EchoApplication : public coros::ServerApplication {
                     if (input == close_cmd) {
                         break;
                     }
-                    co_await socket->write((uint8_t*) input.data(), input.size());
-                    co_await socket->write((uint8_t*) newline.data(), newline.size());
-                    co_await socket->flush();
+                    co_await write_input_string(socket.get(), input);
                 }
             } catch (std::runtime_error error) {
                 std::cerr << "Error in coroutine: " << error.what() << std::endl;

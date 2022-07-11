@@ -48,6 +48,35 @@ void coros::async::SocketWriteAwaiter::await_resume() {
     }
 }
 
+void coros::async::SocketWriteByteAwaiter::write(std::coroutine_handle<> handle) {
+    try {
+        int status = buffer.send_socket();
+        if (status == SOCKET_OP_WOULD_BLOCK && buffer.capacity() == 0) {
+            return socket.listen_for_write([&, handle]() {
+                write(handle);
+            });
+        }
+    } catch (std::runtime_error error) {
+        this->error = error;
+    }
+    handle.resume();
+}
+
+bool coros::async::SocketWriteByteAwaiter::await_ready() noexcept {
+    return buffer.capacity() > 0;
+}
+
+void coros::async::SocketWriteByteAwaiter::await_suspend(std::coroutine_handle<> handle) {
+    write(handle);
+}
+
+void coros::async::SocketWriteByteAwaiter::await_resume() {
+    if (buffer.capacity() == 0) {
+        throw error;
+    }
+    buffer.write_b(b);
+}
+
 void coros::async::SocketFlushAwaiter::flush(std::coroutine_handle<> handle) {
     try {
         int status = buffer.send_socket();

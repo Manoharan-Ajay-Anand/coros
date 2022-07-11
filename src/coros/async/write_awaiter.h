@@ -28,6 +28,17 @@ namespace coros {
             void await_resume();
         };
 
+        struct SocketWriteByteAwaiter {
+            Socket& socket;
+            memory::SocketWriteBuffer& buffer;
+            uint8_t b;
+            std::runtime_error error;
+            void write(std::coroutine_handle<> handle);
+            bool await_ready() noexcept;
+            void await_suspend(std::coroutine_handle<> handle);
+            void await_resume();
+        };
+
         struct SocketFlushAwaiter {
             Socket& socket;
             memory::SocketWriteBuffer& buffer;
