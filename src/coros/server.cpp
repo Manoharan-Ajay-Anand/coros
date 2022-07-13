@@ -66,7 +66,7 @@ void coros::Server::setup() {
         throw std::runtime_error(std::string("Server listen(): ").append(strerror(errno)));
     }
     event_monitor.register_socket(server_socketfd, *this);
-    event_monitor.listen_for_read(server_socketfd);
+    event_monitor.listen_for_io(server_socketfd);
 }
 
 void coros::Server::on_socket_event(bool can_read, bool can_write) {
@@ -87,7 +87,7 @@ void coros::Server::on_socket_event(bool can_read, bool can_write) {
             ); 
         });
     }
-    event_monitor.listen_for_read(server_socketfd);
+    event_monitor.listen_for_io(server_socketfd);
 }
 
 void coros::Server::start(bool start_async) {

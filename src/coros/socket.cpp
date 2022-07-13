@@ -33,7 +33,7 @@ void coros::Socket::listen_for_read(std::function<void()> handler) {
         read_handler_set = true;
         read_handler = handler;
     }
-    event_monitor.listen_for_read(details.socket_fd);
+    event_monitor.listen_for_io(details.socket_fd);
 }
 
 void coros::Socket::listen_for_write(std::function<void()> handler) {
@@ -45,7 +45,7 @@ void coros::Socket::listen_for_write(std::function<void()> handler) {
         write_handler_set = true;
         write_handler = handler;
     }
-    event_monitor.listen_for_write(details.socket_fd);
+    event_monitor.listen_for_io(details.socket_fd);
 }
 
 void coros::Socket::on_socket_read(bool can_read) {
@@ -56,7 +56,7 @@ void coros::Socket::on_socket_read(bool can_read) {
             return;
         }
         if (!can_read) {
-            return event_monitor.listen_for_read(details.socket_fd);
+            return event_monitor.listen_for_io(details.socket_fd);
         }
         read_handler_set = false;
         handler = read_handler;
@@ -72,7 +72,7 @@ void coros::Socket::on_socket_write(bool can_write) {
             return;
         }
         if (!can_write) {
-            return event_monitor.listen_for_write(details.socket_fd);
+            return event_monitor.listen_for_io(details.socket_fd);
         }
         write_handler_set = false;
         handler = write_handler;

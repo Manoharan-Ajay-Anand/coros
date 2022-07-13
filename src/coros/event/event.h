@@ -3,20 +3,12 @@
 
 #include <unordered_map>
 #include <vector>
-#include <queue>
 #include <mutex>
-#include <functional>
 #include <condition_variable>
 #include <poll.h>
 
 namespace coros {
     namespace event {
-        struct SocketEvent {
-            int socket_fd;
-            bool do_read;
-            bool do_write;
-        };
-        
         class SocketHandler {
             public:
                 virtual void on_socket_event(bool can_read, bool can_write) = 0;
@@ -26,7 +18,7 @@ namespace coros {
             private:
                 bool is_shutdown;
                 std::mutex event_mutex;
-                std::queue<SocketEvent> event_queue;
+                std::vector<int> events;
                 std::condition_variable event_condition;
                 std::mutex handler_mutex;
                 std::unordered_map<int, SocketHandler*> handler_map;
@@ -36,8 +28,7 @@ namespace coros {
                 SocketEventMonitor();
                 void register_socket(int socket_fd, SocketHandler& handler);
                 void deregister_socket(int socket_fd);
-                void listen_for_read(int socket_fd);
-                void listen_for_write(int socket_fd);
+                void listen_for_io(int socket_fd);
                 void start();
                 void shutdown();
         };
