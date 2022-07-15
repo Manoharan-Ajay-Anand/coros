@@ -30,6 +30,7 @@ namespace coros {
             async::ThreadPool& thread_pool;
             memory::SocketReadBuffer input_buffer;
             memory::SocketWriteBuffer output_buffer;
+            std::atomic_bool waiting_for_io;
             std::atomic_bool marked_for_close;
             std::mutex read_mutex;
             bool read_handler_set;

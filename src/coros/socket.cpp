@@ -18,6 +18,7 @@ coros::Socket::Socket(SocketDetails details, event::SocketEventMonitor& event_mo
                       async::ThreadPool& thread_pool) 
         : details(details), event_monitor(event_monitor), thread_pool(thread_pool), 
           input_buffer(details.socket_fd), output_buffer(details.socket_fd) {
+    this->waiting_for_io = false;
     this->marked_for_close = false;
     this->read_handler_set = false;
     this->write_handler_set = false;
@@ -33,7 +34,9 @@ void coros::Socket::listen_for_read(std::function<void()> handler) {
         read_handler_set = true;
         read_handler = handler;
     }
-    event_monitor.listen_for_io(details.socket_fd);
+    if (!waiting_for_io.exchange(true)) {
+        event_monitor.listen_for_io(details.socket_fd);
+    }
 }
 
 void coros::Socket::listen_for_write(std::function<void()> handler) {
@@ -45,7 +48,9 @@ void coros::Socket::listen_for_write(std::function<void()> handler) {
         write_handler_set = true;
         write_handler = handler;
     }
-    event_monitor.listen_for_io(details.socket_fd);
+    if (!waiting_for_io.exchange(true)) {
+        event_monitor.listen_for_io(details.socket_fd);
+    }
 }
 
 void coros::Socket::on_socket_read(bool can_read) {
@@ -55,7 +60,7 @@ void coros::Socket::on_socket_read(bool can_read) {
         if (!read_handler_set) {
             return;
         }
-        if (!can_read) {
+        if (!can_read && !waiting_for_io.exchange(true)) {
             return event_monitor.listen_for_io(details.socket_fd);
         }
         read_handler_set = false;
@@ -71,7 +76,7 @@ void coros::Socket::on_socket_write(bool can_write) {
         if (!write_handler_set) {
             return;
         }
-        if (!can_write) {
+        if (!can_write && !waiting_for_io.exchange(true)) {
             return event_monitor.listen_for_io(details.socket_fd);
         }
         write_handler_set = false;
@@ -84,6 +89,7 @@ void coros::Socket::on_socket_event(bool can_read, bool can_write) {
     if (marked_for_close) {
         return;
     }
+    waiting_for_io = false;
     thread_pool.run([&, can_read]() {
         on_socket_read(can_read);
     });
