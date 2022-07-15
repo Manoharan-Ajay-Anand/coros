@@ -40,6 +40,7 @@ namespace coros {
             std::function<void()> write_handler;
             void on_socket_read(bool can_read);
             void on_socket_write(bool can_write);
+            void listen_for_io();
         public:
             Socket(SocketDetails details, event::SocketEventMonitor& event_monitor, 
                    async::ThreadPool& thread_pool);

@@ -25,6 +25,12 @@ coros::Socket::Socket(SocketDetails details, event::SocketEventMonitor& event_mo
     event_monitor.register_socket(details.socket_fd, *this);
 }
 
+void coros::Socket::listen_for_io() {
+    if (!waiting_for_io.exchange(true)) {
+        event_monitor.listen_for_io(details.socket_fd);
+    }
+}
+
 void coros::Socket::listen_for_read(std::function<void()> handler) {
     {
         std::lock_guard<std::mutex> read_lock(read_mutex);
@@ -34,9 +40,7 @@ void coros::Socket::listen_for_read(std::function<void()> handler) {
         read_handler_set = true;
         read_handler = handler;
     }
-    if (!waiting_for_io.exchange(true)) {
-        event_monitor.listen_for_io(details.socket_fd);
-    }
+    listen_for_io();
 }
 
 void coros::Socket::listen_for_write(std::function<void()> handler) {
@@ -48,9 +52,7 @@ void coros::Socket::listen_for_write(std::function<void()> handler) {
         write_handler_set = true;
         write_handler = handler;
     }
-    if (!waiting_for_io.exchange(true)) {
-        event_monitor.listen_for_io(details.socket_fd);
-    }
+    listen_for_io();
 }
 
 void coros::Socket::on_socket_read(bool can_read) {
@@ -60,8 +62,8 @@ void coros::Socket::on_socket_read(bool can_read) {
         if (!read_handler_set) {
             return;
         }
-        if (!can_read && !waiting_for_io.exchange(true)) {
-            return event_monitor.listen_for_io(details.socket_fd);
+        if (!can_read) {
+            return listen_for_io();
         }
         read_handler_set = false;
         handler = read_handler;
@@ -76,8 +78,8 @@ void coros::Socket::on_socket_write(bool can_write) {
         if (!write_handler_set) {
             return;
         }
-        if (!can_write && !waiting_for_io.exchange(true)) {
-            return event_monitor.listen_for_io(details.socket_fd);
+        if (!can_write) {
+            return listen_for_io();
         }
         write_handler_set = false;
         handler = write_handler;
