@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <coroutine>
 #include <stdexcept>
-#include <mutex>
 
 namespace coros {
     namespace memory {

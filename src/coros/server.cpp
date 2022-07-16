@@ -104,15 +104,3 @@ void coros::Server::shutdown() {
     thread_pool.shutdown();
     close(server_socketfd);
 }
-
-void coros::Server::run_async(std::function<void()> job) {
-    thread_pool.run(job);
-}
-
-void coros::Server::register_socket_event(int socket_fd, SocketHandler& handler) {
-    event_monitor.register_socket(socket_fd, handler);
-}
-
-void coros::Server::deregister_socket_event(int socket_fd) {
-    event_monitor.deregister_socket(socket_fd);
-}

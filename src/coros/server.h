@@ -5,10 +5,8 @@
 #include "async/future.h"
 #include "async/thread_pool.h"
 
-#include <memory>
 #include <string>
 #include <netdb.h>
-#include <coroutine>
 
 namespace coros {
     class Socket;
@@ -30,9 +28,6 @@ namespace coros {
             void setup();
             void start(bool start_async);
             void shutdown();
-            void run_async(std::function<void()> job);
-            void register_socket_event(int socket_fd, SocketHandler& handler);
-            void deregister_socket_event(int socket_fd);
     };
 }
 
