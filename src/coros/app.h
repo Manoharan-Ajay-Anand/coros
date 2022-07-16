@@ -10,13 +10,15 @@
 namespace coros {
     class Socket;
 
+    class Server;
+
     class ServerApplication {
         private:
             std::mutex socket_mutex;
             std::unordered_map<int, std::weak_ptr<Socket>> socket_map;
         public:
-            void handle_socket(std::shared_ptr<Socket> socket_ptr);
-            virtual async::Future on_request(std::shared_ptr<Socket> socket) = 0;
+            void handle_socket(Server& server, std::shared_ptr<Socket> socket_ptr);
+            virtual async::Future on_request(Server& server, std::shared_ptr<Socket> socket) = 0;
             void shutdown();
     };
 }

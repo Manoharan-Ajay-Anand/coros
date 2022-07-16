@@ -14,7 +14,7 @@
 
 class EchoApplication : public coros::ServerApplication {
     public:
-        coros::async::AwaitableFuture get_input_string(coros::Socket* socket, std::string& input) {
+        coros::async::AwaitableFuture get_input(coros::Socket* socket, std::string& input) {
             char c = (char) co_await socket->read_b();
             while (c != '\n') {
                 if (c != '\r') {
@@ -24,26 +24,27 @@ class EchoApplication : public coros::ServerApplication {
             }
         }
 
-        coros::async::AwaitableFuture write_input_string(coros::Socket* socket, std::string& input) {
+        coros::async::AwaitableFuture echo(coros::Socket* socket, std::string& input) {
             const std::string newline = "\r\n";
             co_await socket->write((uint8_t*) input.data(), input.size());
             co_await socket->write((uint8_t*) newline.data(), newline.size());
             co_await socket->flush();
         }
 
-        coros::async::Future on_request(std::shared_ptr<coros::Socket> socket) {
+        coros::async::Future on_request(coros::Server& server, 
+                                        std::shared_ptr<coros::Socket> socket) {
             try {
                 const std::string close_cmd = "close";
                 while (true) {
                     std::string input;
-                    co_await get_input_string(socket.get(), input);
+                    co_await get_input(socket.get(), input);
                     if (input.empty()) {
                         continue;
                     }
                     if (input == close_cmd) {
                         break;
                     }
-                    co_await write_input_string(socket.get(), input);
+                    co_await echo(socket.get(), input);
                 }
             } catch (std::runtime_error error) {
                 std::cerr << "Error in coroutine: " << error.what() << std::endl;

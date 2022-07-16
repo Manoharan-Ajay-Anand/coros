@@ -5,12 +5,12 @@
 #include <mutex>
 #include <unordered_map>
 
-void coros::ServerApplication::handle_socket(std::shared_ptr<Socket> socket_ptr) {
+void coros::ServerApplication::handle_socket(Server& server, std::shared_ptr<Socket> socket_ptr) {
     {
         std::lock_guard<std::mutex> socket_lock(socket_mutex);
         socket_map[socket_ptr->get_fd()] = socket_ptr;
     }
-    on_request(std::move(socket_ptr));
+    on_request(server, std::move(socket_ptr));
 }
 
 void coros::ServerApplication::shutdown() {

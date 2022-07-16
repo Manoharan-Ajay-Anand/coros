@@ -83,8 +83,9 @@ void coros::Server::on_socket_event(bool can_read, bool can_write) {
         SocketDetails details { socket_fd, client_addr, addr_size };
         thread_pool.run([&, details] {
             server_app.handle_socket(
+                *this,
                 std::make_shared<Socket>(details, event_monitor, thread_pool)
-            ); 
+            );
         });
     }
     event_monitor.listen_for_io(server_socketfd);
