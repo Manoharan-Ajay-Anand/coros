@@ -128,10 +128,10 @@ void coros::Socket::close_socket() {
     if (marked_for_close.exchange(true)) {
         return;
     }
-    close(details.socket_fd);
     input_buffer.close();
     output_buffer.close();
     event_monitor.deregister_socket(details.socket_fd);
+    close(details.socket_fd);
     {
         std::lock_guard<std::mutex> read_lock(read_mutex);
         if (read_handler_set) {

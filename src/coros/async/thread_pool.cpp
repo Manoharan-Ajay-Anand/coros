@@ -26,7 +26,11 @@ void coros::async::ThreadPool::run_jobs() {
             job = jobs.front();
             jobs.pop();
         }
-        job();
+        try {
+            job();
+        } catch (std::runtime_error err) {
+            std::cerr << err.what() << std::endl;
+        }
     }
 }
 
