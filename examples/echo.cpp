@@ -14,7 +14,8 @@
 
 class EchoApplication : public coros::ServerApplication {
     public:
-        coros::async::AwaitableFuture get_input(coros::Socket* socket, std::string& input) {
+        coros::async::AwaitableValue<std::string> get_input(coros::Socket* socket) {
+            std::string input;
             char c = (char) co_await socket->read_b();
             while (c != '\n') {
                 if (c != '\r') {
@@ -22,6 +23,7 @@ class EchoApplication : public coros::ServerApplication {
                 }
                 c = (char) co_await socket->read_b();
             }
+            co_return std::move(input);
         }
 
         coros::async::AwaitableFuture echo(coros::Socket* socket, std::string& input) {
@@ -36,8 +38,7 @@ class EchoApplication : public coros::ServerApplication {
             try {
                 const std::string close_cmd = "close";
                 while (true) {
-                    std::string input;
-                    co_await get_input(socket.get(), input);
+                    std::string input = co_await get_input(socket.get());
                     if (input.empty()) {
                         continue;
                     }
