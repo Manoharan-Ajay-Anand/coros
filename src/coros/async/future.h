@@ -3,6 +3,7 @@
 
 #include <coroutine>
 #include <exception>
+#include <optional>
 
 namespace coros {
     namespace async {
@@ -82,7 +83,7 @@ namespace coros {
         template<typename T>
         struct AwaitableValue {
             struct promise_type {
-                T val {};
+                std::optional<T> val;
                 std::coroutine_handle<> waiting;
                 bool has_error = false;
                 std::exception_ptr exception;
@@ -102,12 +103,12 @@ namespace coros {
                     exception = std::current_exception(); 
                 }
                 
-                void return_value(const T& val) {
-                    this->val = val;
+                void return_value(const T& t) {
+                    val = t;
                 }
 
-                void return_value(T&& val) {
-                    this->val = std::move(val);
+                void return_value(T&& t) {
+                    val = std::move(t);
                 }
             };
 
@@ -125,12 +126,12 @@ namespace coros {
                 coro_handle.promise().waiting = handle;
             }
             
-            T await_resume() {
+            T&& await_resume() {
                 promise_type& promise = coro_handle.promise();
                 if (promise.has_error) {
                     std::rethrow_exception(promise.exception);
                 }
-                return promise.val;
+                return std::move(promise.val.value());
             }
         };
     }
