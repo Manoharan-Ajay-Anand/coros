@@ -59,6 +59,10 @@ namespace coros {
 
             std::coroutine_handle<promise_type> coro_handle;
             
+            ~AwaitableFuture() {
+                coro_handle.destroy();
+            }
+
             bool await_ready() noexcept {
                 return coro_handle.done();
             }
@@ -68,11 +72,9 @@ namespace coros {
             }
             
             void await_resume() {
-                bool has_error = coro_handle.promise().has_error;
-                std::exception_ptr exception = coro_handle.promise().exception;
-                coro_handle.destroy();
-                if (has_error) {
-                    std::rethrow_exception(exception);
+                promise_type& promise = coro_handle.promise();
+                if (promise.has_error) {
+                    std::rethrow_exception(promise.exception);
                 }
             }
         };
@@ -110,6 +112,10 @@ namespace coros {
             };
 
             std::coroutine_handle<promise_type> coro_handle;
+
+            ~AwaitableValue() {
+                coro_handle.destroy();
+            }
             
             bool await_ready() noexcept {
                 return coro_handle.done();
@@ -120,14 +126,11 @@ namespace coros {
             }
             
             T await_resume() {
-                T val = std::move(coro_handle.promise().val);
-                bool has_error = coro_handle.promise().has_error;
-                std::exception_ptr exception = coro_handle.promise().exception;
-                coro_handle.destroy();
-                if (has_error) {
-                    std::rethrow_exception(exception);
+                promise_type& promise = coro_handle.promise();
+                if (promise.has_error) {
+                    std::rethrow_exception(promise.exception);
                 }
-                return val;
+                return promise.val;
             }
         };
     }
