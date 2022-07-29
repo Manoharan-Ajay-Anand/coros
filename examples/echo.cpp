@@ -1,6 +1,8 @@
 #include "coros/server.h"
 #include "coros/app.h"
 #include "coros/socket.h"
+#include "coros/event/event.h"
+#include "coros/async/thread_pool.h"
 #include "coros/async/future.h"
 
 #include <iostream>
@@ -67,8 +69,10 @@ void start_server(coros::Server& server) {
 }
 
 int main() {
+    coros::async::ThreadPool thread_pool;
+    coros::event::SocketEventMonitor event_monitor;
     EchoApplication echo_app;
-    coros::Server echo_server(1025, echo_app);
+    coros::Server echo_server(1025, echo_app, event_monitor, thread_pool);
     std::cout << "Starting Server..." << std::endl;
     start_server(echo_server);
     return 0;

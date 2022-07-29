@@ -17,8 +17,10 @@
 #include <memory>
 #include <mutex>
 
-coros::Server::Server(short port, ServerApplication& server_app) 
-        : service(std::to_string(port)), server_app(server_app) {
+coros::Server::Server(short port, ServerApplication& server_app,
+                      event::SocketEventMonitor& event_monitor, async::ThreadPool& thread_pool) 
+        : service(std::to_string(port)), server_app(server_app),
+          event_monitor(event_monitor), thread_pool(thread_pool) {
 }
 
 addrinfo* coros::Server::get_local_addr_info() {
