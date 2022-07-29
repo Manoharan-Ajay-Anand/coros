@@ -19,3 +19,7 @@ up blocking, such as when waiting for a client to send data, the coroutine is su
 Coros's event monitor is signalled. The underlying thread picks up other jobs such as 
 serving another socket connection. Coros's event monitor will then resume the coroutine, on any one 
 of the free threads in the thread pool, once the socket is ready for read/write operations.
+
+## Guide
+
+Please refer to the wiki to learn how to use Coros for your applications.
