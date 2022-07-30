@@ -108,11 +108,11 @@ coros::async::SocketReadByteAwaiter coros::Socket::read_b() {
     return { *this, input_buffer, std::runtime_error("") };
 }
 
-coros::async::SocketWriteAwaiter coros::Socket::write(uint8_t* src, int size) {
+coros::async::SocketWriteAwaiter coros::Socket::write(const uint8_t* src, int size) {
     return { *this, output_buffer, src, 0, size, std::runtime_error("") };
 }
 
-coros::async::SocketWriteByteAwaiter coros::Socket::write_b(uint8_t b) {
+coros::async::SocketWriteByteAwaiter coros::Socket::write_b(const uint8_t b) {
     return { *this, output_buffer, b, std::runtime_error("") };
 }
 

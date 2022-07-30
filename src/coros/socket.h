@@ -49,8 +49,8 @@ namespace coros {
             void on_socket_event(bool can_read, bool can_write);
             async::SocketReadAwaiter read(uint8_t* dest, int size);
             async::SocketReadByteAwaiter read_b();
-            async::SocketWriteAwaiter write(uint8_t* src, int size);
-            async::SocketWriteByteAwaiter write_b(uint8_t b);
+            async::SocketWriteAwaiter write(const uint8_t* src, int size);
+            async::SocketWriteByteAwaiter write_b(const uint8_t b);
             async::SocketFlushAwaiter flush();
             int get_fd();
             void close_socket();

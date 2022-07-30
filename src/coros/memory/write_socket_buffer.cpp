@@ -11,7 +11,7 @@
 coros::memory::SocketWriteBuffer::SocketWriteBuffer(int socket_fd) : SocketBuffer(socket_fd) {
 }
 
-void coros::memory::SocketWriteBuffer::write(uint8_t* src, int size) {
+void coros::memory::SocketWriteBuffer::write(const uint8_t* src, int size) {
     if (is_closed) {
         throw std::runtime_error("SocketBuffer write error: Socket already closed");
     }
@@ -23,7 +23,7 @@ void coros::memory::SocketWriteBuffer::write(uint8_t* src, int size) {
     end += size;
 }
 
-void coros::memory::SocketWriteBuffer::write_b(uint8_t b) {
+void coros::memory::SocketWriteBuffer::write_b(const uint8_t b) {
     if (is_closed) {
         throw std::runtime_error("SocketBuffer write error: Socket already closed");
     }

@@ -15,26 +15,29 @@
 #include <cstdint>
 
 class EchoApplication : public coros::ServerApplication {
-    public:
+    private:
+        const std::string newline = "\r\n";
+
         coros::async::AwaitableValue<std::string> get_input(coros::Socket* socket) {
             std::string input;
-            char c = (char) co_await socket->read_b();
+            char c = static_cast<char>(co_await socket->read_b());
             while (c != '\n') {
                 if (c != '\r') {
                     input.push_back(c);
                 }
-                c = (char) co_await socket->read_b();
+                c = static_cast<char>(co_await socket->read_b());
             }
             co_return std::move(input);
         }
 
         coros::async::AwaitableFuture echo(coros::Socket* socket, std::string& input) {
-            const std::string newline = "\r\n";
-            co_await socket->write((uint8_t*) input.data(), input.size());
-            co_await socket->write((uint8_t*) newline.data(), newline.size());
+            co_await socket->write(reinterpret_cast<uint8_t*>(input.data()), input.size());
+            co_await socket->write(reinterpret_cast<const uint8_t*>(newline.data()), 
+                                   newline.size());
             co_await socket->flush();
         }
 
+    public:
         coros::async::Future on_request(coros::Server& server, 
                                         std::shared_ptr<coros::Socket> socket) {
             try {

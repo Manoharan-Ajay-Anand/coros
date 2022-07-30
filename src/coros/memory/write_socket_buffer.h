@@ -10,8 +10,8 @@ namespace coros {
         class SocketWriteBuffer : public SocketBuffer {
             public:
                 SocketWriteBuffer(int socket_fd);
-                void write(uint8_t* src, int size);
-                void write_b(uint8_t b);
+                void write(const uint8_t* src, int size);
+                void write_b(const uint8_t b);
                 int send_socket();
         };
     }
