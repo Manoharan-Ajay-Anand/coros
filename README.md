@@ -23,3 +23,7 @@ of the free threads in the thread pool, once the socket is ready for read/write 
 ## Guide
 
 Please refer to the wiki to learn how to use Coros for your applications.
+
+## Compatibility
+
+This project can be compiled with G++ 10 on Linux, BSD and other POSIX compliant OS. 
