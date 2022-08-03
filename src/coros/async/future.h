@@ -17,24 +17,6 @@ namespace coros {
             };
         };
 
-        struct CoroAwaiter {
-            std::coroutine_handle<> waiting;
-
-            inline bool await_ready() noexcept {
-                return false;
-            }
-            
-            std::coroutine_handle<> await_suspend(std::coroutine_handle<> handle) noexcept {
-                if (waiting) {
-                    return waiting;
-                }
-                return std::noop_coroutine();
-            }
-            
-            void await_resume() noexcept {
-            }
-        };
-
         struct AwaitableFuture {
             struct promise_type {
                 std::coroutine_handle<> waiting;
@@ -47,9 +29,22 @@ namespace coros {
                 
                 std::suspend_never initial_suspend() { return {}; }
                 
-                CoroAwaiter final_suspend() noexcept {
-                    return { waiting };
-                }
+                struct final_awaiter {
+                    bool await_ready() noexcept { return false; }
+            
+                    std::coroutine_handle<> await_suspend(
+                            std::coroutine_handle<promise_type> handle) noexcept {
+                        auto waiting = handle.promise().waiting;
+                        if (waiting) {
+                            return waiting;
+                        }
+                        return std::noop_coroutine();
+                    }
+            
+                    void await_resume() noexcept {}
+                };
+
+                final_awaiter final_suspend() noexcept { return {}; }
                 
                 void unhandled_exception() {
                     has_error = true;
@@ -95,9 +90,22 @@ namespace coros {
                 
                 std::suspend_never initial_suspend() { return {}; }
                 
-                CoroAwaiter final_suspend() noexcept {
-                    return { waiting };
-                }
+                struct final_awaiter {
+                    bool await_ready() noexcept { return false; }
+            
+                    std::coroutine_handle<> await_suspend(
+                            std::coroutine_handle<promise_type> handle) noexcept {
+                        auto waiting = handle.promise().waiting;
+                        if (waiting) {
+                            return waiting;
+                        }
+                        return std::noop_coroutine();
+                    }
+            
+                    void await_resume() noexcept {}
+                };
+
+                final_awaiter final_suspend() noexcept { return {}; }
                 
                 void unhandled_exception() {
                     has_error = true;
