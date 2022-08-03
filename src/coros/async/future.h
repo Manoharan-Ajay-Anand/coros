@@ -24,10 +24,11 @@ namespace coros {
                 return false;
             }
             
-            void await_suspend(std::coroutine_handle<> handle) noexcept {
+            std::coroutine_handle<> await_suspend(std::coroutine_handle<> handle) noexcept {
                 if (waiting) {
-                    waiting.resume();
+                    return waiting;
                 }
+                return std::noop_coroutine();
             }
             
             void await_resume() noexcept {
