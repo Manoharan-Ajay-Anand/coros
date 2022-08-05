@@ -20,7 +20,6 @@ namespace coros {
         struct AwaitableFuture {
             struct promise_type {
                 std::coroutine_handle<> waiting;
-                bool has_error = false;
                 std::exception_ptr exception;
 
                 AwaitableFuture get_return_object() { 
@@ -47,7 +46,6 @@ namespace coros {
                 final_awaiter final_suspend() noexcept { return {}; }
                 
                 void unhandled_exception() {
-                    has_error = true;
                     exception = std::current_exception(); 
                 }
                 
@@ -70,7 +68,7 @@ namespace coros {
             
             void await_resume() {
                 promise_type& promise = coro_handle.promise();
-                if (promise.has_error) {
+                if (promise.exception) {
                     std::rethrow_exception(promise.exception);
                 }
             }
@@ -81,7 +79,6 @@ namespace coros {
             struct promise_type {
                 std::optional<T> val;
                 std::coroutine_handle<> waiting;
-                bool has_error = false;
                 std::exception_ptr exception;
 
                 AwaitableValue<T> get_return_object() { 
@@ -108,7 +105,6 @@ namespace coros {
                 final_awaiter final_suspend() noexcept { return {}; }
                 
                 void unhandled_exception() {
-                    has_error = true;
                     exception = std::current_exception(); 
                 }
                 
@@ -137,7 +133,7 @@ namespace coros {
             
             T&& await_resume() {
                 promise_type& promise = coro_handle.promise();
-                if (promise.has_error) {
+                if (promise.exception) {
                     std::rethrow_exception(promise.exception);
                 }
                 return std::move(promise.val.value());
