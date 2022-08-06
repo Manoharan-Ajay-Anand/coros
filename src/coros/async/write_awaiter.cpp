@@ -10,15 +10,13 @@
 void coros::async::SocketWriteAwaiter::write(std::coroutine_handle<> handle) {
     try {
         while (size > 0) {
-            if (buffer.capacity() == 0) {
-                int status = buffer.send_socket();
-                if (status == SOCKET_OP_WOULD_BLOCK && buffer.capacity() == 0) {
-                    return socket.listen_for_write([&, handle]() {
-                        write(handle);
-                    });
-                }
-            }
+            int status = buffer.send_socket();
             write_available();
+            if (status == SOCKET_OP_WOULD_BLOCK && size > 0) {
+                return socket.listen_for_write([&, handle]() {
+                    write(handle);
+                });
+            }
         }
     } catch (std::runtime_error error) {
         this->error = error;

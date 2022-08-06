@@ -10,15 +10,13 @@
 void coros::async::SocketReadAwaiter::read(std::coroutine_handle<> handle) {
     try {
         while (size > 0) {
-            if (buffer.remaining() == 0) {
-                int status = buffer.recv_socket();
-                if (status == SOCKET_OP_WOULD_BLOCK && buffer.remaining() == 0) {
-                    return socket.listen_for_read([&, handle]() {
-                        read(handle);
-                    });
-                }
-            }
+            int status = buffer.recv_socket();
             read_available();
+            if (status == SOCKET_OP_WOULD_BLOCK && size > 0) {
+                return socket.listen_for_read([&, handle]() {
+                    read(handle);
+                });
+            }
         }
     } catch (std::runtime_error error) {
         this->error = error;
