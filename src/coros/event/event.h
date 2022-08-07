@@ -7,6 +7,8 @@
 #include <condition_variable>
 #include <poll.h>
 
+#define POLL_TIMEOUT 2000
+
 namespace coros {
     namespace event {
         class SocketHandler {

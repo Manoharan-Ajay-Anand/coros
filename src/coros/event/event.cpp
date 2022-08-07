@@ -36,7 +36,7 @@ void coros::event::SocketEventMonitor::listen_for_io(int socket_fd) {
 
 void coros::event::SocketEventMonitor::populate_events(std::vector<pollfd>& pollfds) {
     std::sort(events.begin(), events.end());
-    for (auto it = events.begin(); it != events.end(); it++) {
+    for (auto it = events.begin(); it != events.end(); ++it) {
         if (pollfds.size() > 0 && pollfds.back().fd == *it) {
             continue;
         }
@@ -48,7 +48,7 @@ void coros::event::SocketEventMonitor::populate_events(std::vector<pollfd>& poll
 
 void coros::event::SocketEventMonitor::trigger_events(std::vector<pollfd>& pollfds) {
     std::lock_guard<std::mutex> handler_lock(handler_mutex);
-    for (auto it = pollfds.begin(); it != pollfds.end(); it++) {
+    for (auto it = pollfds.begin(); it != pollfds.end(); ++it) {
         pollfd& pfd = *it;
         bool can_read = (pfd.revents & POLLIN) == POLLIN;
         bool can_write = (pfd.revents & POLLOUT) == POLLOUT;
@@ -71,7 +71,7 @@ void coros::event::SocketEventMonitor::start() {
             }
             populate_events(pollfds);
         }
-        int fd_count = poll(pollfds.data(), pollfds.size(), 2000);
+        int fd_count = poll(pollfds.data(), pollfds.size(), POLL_TIMEOUT);
         if (fd_count == -1) {
             throw std::runtime_error(std::string("Poll Error: ").append(strerror(errno)));
         }

@@ -15,7 +15,7 @@ void coros::ServerApplication::handle_socket(Server& server, std::shared_ptr<Soc
 
 void coros::ServerApplication::shutdown() {
     std::lock_guard<std::mutex> socket_lock(socket_mutex);
-    for (auto it = socket_map.begin(); it != socket_map.end(); it++) {
+    for (auto it = socket_map.begin(); it != socket_map.end(); ++it) {
         if (std::shared_ptr<Socket> socket = it->second.lock()) {
             socket->close_socket();
         }

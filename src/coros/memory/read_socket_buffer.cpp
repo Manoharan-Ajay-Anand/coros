@@ -30,7 +30,7 @@ uint8_t coros::memory::SocketReadBuffer::read_b() {
         throw std::runtime_error("SocketBuffer read_b error: Read size more than remaining");
     }
     uint8_t b = buffer[start];
-    start++;
+    ++start;
     return b;
 }
 

@@ -31,7 +31,7 @@ void coros::memory::SocketWriteBuffer::write_b(const uint8_t b) {
         throw std::runtime_error("SocketBuffer write error: Write size more than capacity");
     }
     buffer[end] = b;
-    end++;
+    ++end;
 }
 
 int coros::memory::SocketWriteBuffer::send_socket() {

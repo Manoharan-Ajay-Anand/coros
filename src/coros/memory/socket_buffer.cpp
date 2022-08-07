@@ -23,8 +23,8 @@ void coros::memory::SocketBuffer::compact() {
     int src = start;
     while (src < end) {
         buffer[dest] = buffer[src];
-        dest++;
-        src++;
+        ++dest;
+        ++src;
     }
     start = 0;
     end = dest;

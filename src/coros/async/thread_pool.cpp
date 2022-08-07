@@ -57,7 +57,7 @@ void coros::async::ThreadPool::shutdown() {
         is_shutdown = true;
     }
     jobs_condition.notify_all();
-    for (auto it = threads.begin(); it != threads.end(); it++) {
+    for (auto it = threads.begin(); it != threads.end(); ++it) {
         it->join();
     }
 }
