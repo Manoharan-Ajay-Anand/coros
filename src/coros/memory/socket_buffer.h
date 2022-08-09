@@ -11,21 +11,29 @@
 #define BUFFER_LIMIT 8192
 
 namespace coros {
+    class Socket;
+
+    namespace async {
+        class ThreadPool;
+    }
+    
     namespace memory {
         class SocketBuffer {
             protected:
                 int socket_fd;
+                Socket& socket;
+                async::ThreadPool& thread_pool;
                 std::array<uint8_t, BUFFER_LIMIT> buffer;
                 int start;
                 int end;
                 std::atomic_bool is_closed;
-                SocketBuffer(int socket_fd);
+                SocketBuffer(int socket_fd, async::ThreadPool& thread_pool, Socket& socket);
                 void compact();
             public:
                 int get_fd();
                 int remaining();
                 int capacity();
-                void close();
+                virtual void close() = 0;
         };
     }
 }

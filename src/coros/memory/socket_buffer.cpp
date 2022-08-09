@@ -8,7 +8,9 @@
 #include <cerrno>
 #include <stdexcept>
 
-coros::memory::SocketBuffer::SocketBuffer(int socket_fd) {
+coros::memory::SocketBuffer::SocketBuffer(int socket_fd, async::ThreadPool& thread_pool, 
+                                          Socket& socket) 
+        : thread_pool(thread_pool), socket(socket) {
     this->socket_fd = socket_fd;
     this->start = 0;
     this->end = 0;
@@ -40,8 +42,4 @@ int coros::memory::SocketBuffer::remaining() {
 
 int coros::memory::SocketBuffer::capacity() {
     return BUFFER_LIMIT - end;
-}
-
-void coros::memory::SocketBuffer::close() {
-    is_closed = true;
 }

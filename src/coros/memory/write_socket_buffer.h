@@ -4,15 +4,30 @@
 #include "socket_buffer.h"
 
 #include <cstdint>
+#include <optional>
+#include <mutex>
+#include <functional>
 
 namespace coros {
+    class Socket;
+
+    namespace async {
+        class ThreadPool;
+    }
+    
     namespace memory {
         class SocketWriteBuffer : public SocketBuffer {
+            private:
+                std::mutex write_mutex;
+                std::optional<std::function<void()>> write_handler;
             public:
-                SocketWriteBuffer(int socket_fd);
+                SocketWriteBuffer(int socket_fd, async::ThreadPool& thread_pool, Socket& socket);
                 void write(const uint8_t* src, int size);
                 void write_b(const uint8_t b);
                 int send_socket();
+                void set_write_handler(std::function<void()> handler);
+                void on_write(bool can_write);
+                void close();
         };
     }
 }

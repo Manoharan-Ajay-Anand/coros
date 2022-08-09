@@ -1,4 +1,6 @@
 #include "read_socket_buffer.h"
+#include "coros/socket.h"
+#include "coros/async/thread_pool.h"
 
 #include <iostream>
 #include <cstdint>
@@ -7,8 +9,13 @@
 #include <sys/socket.h>
 #include <cerrno>
 #include <stdexcept>
+#include <optional>
+#include <mutex>
+#include <functional>
 
-coros::memory::SocketReadBuffer::SocketReadBuffer(int socket_fd) : SocketBuffer(socket_fd) {
+coros::memory::SocketReadBuffer::SocketReadBuffer(int socket_fd, async::ThreadPool& thread_pool,
+                                                  Socket& socket) 
+        : SocketBuffer(socket_fd, thread_pool, socket) {
 }
 
 void coros::memory::SocketReadBuffer::read(uint8_t* dest, int size) {
@@ -53,4 +60,37 @@ int coros::memory::SocketReadBuffer::recv_socket() {
         end += size_read;
     }
     return SOCKET_OP_CONTINUE;
+}
+
+void coros::memory::SocketReadBuffer::set_read_handler(std::function<void()> handler) {
+    if (is_closed) {
+        throw std::runtime_error("SocketBuffer read error: Socket already closed");
+    }
+    std::lock_guard<std::mutex> guard(read_mutex);
+    if (read_handler) {
+        throw std::runtime_error("SocketBuffer read error: Read Handler already set");
+    }
+    read_handler = handler;
+    socket.listen_for_io();
+}
+
+void coros::memory::SocketReadBuffer::on_read(bool can_read) {
+    std::lock_guard<std::mutex> guard(read_mutex);
+    if (!read_handler) {
+        return;
+    }
+    if (!can_read) {
+        return socket.listen_for_io();
+    }
+    thread_pool.run(read_handler.value());
+    read_handler.reset();
+}
+
+void coros::memory::SocketReadBuffer::close() {
+    if (is_closed.exchange(true)) {
+        return;
+    }
+    if (read_handler) {
+        thread_pool.run(read_handler.value());
+    }
 }

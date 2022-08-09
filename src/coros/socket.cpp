@@ -16,12 +16,11 @@
 
 coros::Socket::Socket(SocketDetails details, event::SocketEventMonitor& event_monitor, 
                       async::ThreadPool& thread_pool) 
-        : details(details), event_monitor(event_monitor), thread_pool(thread_pool), 
-          input_buffer(details.socket_fd), output_buffer(details.socket_fd) {
+        : details(details), event_monitor(event_monitor), 
+          input_buffer(details.socket_fd, thread_pool, *this), 
+          output_buffer(details.socket_fd, thread_pool, *this) {
     this->waiting_for_io = false;
     this->marked_for_close = false;
-    this->read_handler_set = false;
-    this->write_handler_set = false;
     event_monitor.register_socket(details.socket_fd, *this);
 }
 
@@ -31,93 +30,33 @@ void coros::Socket::listen_for_io() {
     }
 }
 
-void coros::Socket::listen_for_read(std::function<void()> handler) {
-    {
-        std::lock_guard<std::mutex> read_lock(read_mutex);
-        if (read_handler_set) {
-            throw std::runtime_error("Read handler already set");
-        }
-        read_handler_set = true;
-        read_handler = handler;
-    }
-    listen_for_io();
-}
-
-void coros::Socket::listen_for_write(std::function<void()> handler) {
-    {
-        std::lock_guard<std::mutex> write_lock(write_mutex);
-        if (write_handler_set) {
-            throw std::runtime_error("Write handler already set");
-        }
-        write_handler_set = true;
-        write_handler = handler;
-    }
-    listen_for_io();
-}
-
-void coros::Socket::on_socket_read(bool can_read) {
-    std::function<void()> handler;
-    {
-        std::lock_guard<std::mutex> read_lock(read_mutex);
-        if (!read_handler_set) {
-            return;
-        }
-        if (!can_read) {
-            return listen_for_io();
-        }
-        read_handler_set = false;
-        handler = read_handler;
-    }
-    handler();
-}
-
-void coros::Socket::on_socket_write(bool can_write) {
-    std::function<void()> handler;
-    {
-        std::lock_guard<std::mutex> write_lock(write_mutex);
-        if (!write_handler_set) {
-            return;
-        }
-        if (!can_write) {
-            return listen_for_io();
-        }
-        write_handler_set = false;
-        handler = write_handler;
-    }
-    handler();
-}
-
 void coros::Socket::on_socket_event(bool can_read, bool can_write) {
     if (marked_for_close) {
         return;
     }
     waiting_for_io = false;
-    thread_pool.run([&, can_read]() {
-        on_socket_read(can_read);
-    });
-    thread_pool.run([&, can_write]() {
-        on_socket_write(can_write);
-    });
+    input_buffer.on_read(can_read);
+    output_buffer.on_write(can_write);
 }
 
 coros::async::SocketReadAwaiter coros::Socket::read(uint8_t* dest, int size) {
-    return { *this, input_buffer, dest, 0, size, std::runtime_error("") };
+    return { input_buffer, dest, 0, size, std::runtime_error("") };
 }
 
 coros::async::SocketReadByteAwaiter coros::Socket::read_b() {
-    return { *this, input_buffer, std::runtime_error("") };
+    return { input_buffer, std::runtime_error("") };
 }
 
 coros::async::SocketWriteAwaiter coros::Socket::write(const uint8_t* src, int size) {
-    return { *this, output_buffer, src, 0, size, std::runtime_error("") };
+    return { output_buffer, src, 0, size, std::runtime_error("") };
 }
 
 coros::async::SocketWriteByteAwaiter coros::Socket::write_b(const uint8_t b) {
-    return { *this, output_buffer, b, std::runtime_error("") };
+    return { output_buffer, b, std::runtime_error("") };
 }
 
 coros::async::SocketFlushAwaiter coros::Socket::flush() {
-    return { *this, output_buffer, std::runtime_error("") };
+    return { output_buffer, std::runtime_error("") };
 }
 
 int coros::Socket::get_fd() {
@@ -132,18 +71,4 @@ void coros::Socket::close_socket() {
     output_buffer.close();
     event_monitor.deregister_socket(details.socket_fd);
     close(details.socket_fd);
-    {
-        std::lock_guard<std::mutex> read_lock(read_mutex);
-        if (read_handler_set) {
-            read_handler_set = false;
-            read_handler();
-        }
-    }
-    {
-        std::lock_guard<std::mutex> write_lock(write_mutex);
-        if (write_handler_set) {
-            write_handler_set = false;
-            write_handler();
-        }
-    }
 }
