@@ -72,28 +72,30 @@ void coros::Server::setup() {
 }
 
 void coros::Server::on_socket_event(bool can_read, bool can_write) {
-    if (can_read) {
-        thread_pool.run([&] {
-            sockaddr_storage client_addr;
-            socklen_t addr_size = sizeof client_addr;
-            int socket_fd = accept(
-                server_socketfd, (sockaddr *) &client_addr, &addr_size
-            );
-            if (socket_fd == -1) {
-                if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                    return;
-                }
-                throw std::runtime_error(std::string("Server accept(): ").append(strerror(errno)));
+    if (!can_read) {
+        return event_monitor.listen_for_io(server_socketfd);
+    }
+    while (true) {
+        sockaddr_storage client_addr;
+        socklen_t addr_size = sizeof client_addr;
+        int socket_fd = accept(
+            server_socketfd, (sockaddr *) &client_addr, &addr_size
+        );
+        if (socket_fd == -1) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                return event_monitor.listen_for_io(server_socketfd);
             }
-            set_non_blocking(socket_fd);
-            SocketDetails details { socket_fd, client_addr, addr_size };
+            throw std::runtime_error(std::string("Server accept(): ").append(strerror(errno)));
+        }
+        set_non_blocking(socket_fd);
+        SocketDetails details { socket_fd, client_addr, addr_size };
+        thread_pool.run([&, details] {
             server_app.handle_socket(
                 *this,
                 std::make_shared<Socket>(details, event_monitor, thread_pool)
             );
         });
     }
-    event_monitor.listen_for_io(server_socketfd);
 }
 
 void coros::Server::start(bool start_async) {
