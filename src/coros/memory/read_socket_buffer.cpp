@@ -12,21 +12,11 @@
 #include <optional>
 #include <mutex>
 #include <functional>
+#include <algorithm>
 
 coros::memory::SocketReadBuffer::SocketReadBuffer(int socket_fd, async::ThreadPool& thread_pool,
                                                   Socket& socket) 
         : SocketBuffer(socket_fd, thread_pool, socket) {
-}
-
-void coros::memory::SocketReadBuffer::read(uint8_t* dest, int size) {
-    if (is_closed) {
-        throw std::runtime_error("SocketBuffer read error: Socket already closed");
-    }
-    if (size > remaining()) {
-        throw std::runtime_error("SocketBuffer read error: Read size more than remaining");
-    }
-    std::memcpy(dest, buffer.data() + start, size);
-    start += size;
 }
 
 uint8_t coros::memory::SocketReadBuffer::read_b() {
@@ -36,18 +26,32 @@ uint8_t coros::memory::SocketReadBuffer::read_b() {
     if (remaining() == 0) {
         throw std::runtime_error("SocketBuffer read_b error: Read size more than remaining");
     }
-    uint8_t b = buffer[start];
-    ++start;
+    uint8_t b = buffer[get_position(read_index)];
+    ++read_index;
+    reset_read_write_indices();
     return b;
 }
 
-int coros::memory::SocketReadBuffer::recv_socket() {
-    compact();
-    while (end < BUFFER_LIMIT) {
+void coros::memory::SocketReadBuffer::read(uint8_t* dest, int size) {
+    if (is_closed) {
+        throw std::runtime_error("SocketBuffer read error: Socket already closed");
+    }
+    if (size > remaining()) {
+        throw std::runtime_error("SocketBuffer read error: Read size more than remaining");
+    }
+    for (int i = 0; i < size; ++i) {
+        *(dest + i) = buffer[get_position(read_index + i)];
+    }
+    read_index += size;
+    reset_read_write_indices();
+}
+
+int coros::memory::SocketReadBuffer::recv_size(int size) {
+    while (size > 0) {
         if (is_closed) {
             throw std::runtime_error("SocketBuffer read error: Socket already closed");
         }
-        int size_read = recv(socket_fd, buffer.data() + end, capacity(), 0);
+        int size_read = recv(socket_fd, buffer.data() + get_position(write_index), size, 0);
         if (size_read == 0) {
             throw std::runtime_error("SocketBuffer recv_socket failed: client disconnected");
         }
@@ -57,7 +61,18 @@ int coros::memory::SocketReadBuffer::recv_socket() {
             }
             throw std::runtime_error(std::string("SocketBuffer recv(): ").append(strerror(errno)));
         }
-        end += size_read;
+        write_index += size_read;
+        size -= size_read;
+    }
+    return SOCKET_OP_CONTINUE;
+}
+
+int coros::memory::SocketReadBuffer::recv_socket() {
+    while (capacity() > 0) {
+        int status = recv_size(std::min(capacity(), BUFFER_LENGTH - get_position(write_index)));
+        if (status == SOCKET_OP_WOULD_BLOCK) {
+            return status;
+        }
     }
     return SOCKET_OP_CONTINUE;
 }

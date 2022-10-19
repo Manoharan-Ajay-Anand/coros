@@ -12,24 +12,20 @@ coros::memory::SocketBuffer::SocketBuffer(int socket_fd, async::ThreadPool& thre
                                           Socket& socket) 
         : thread_pool(thread_pool), socket(socket) {
     this->socket_fd = socket_fd;
-    this->start = 0;
-    this->end = 0;
+    this->read_index = 0;
+    this->write_index = 0;
     this->is_closed = false;
 }
 
-void coros::memory::SocketBuffer::compact() {
-    if (start == 0) {
-        return;
+int coros::memory::SocketBuffer::get_position(int index) {
+    return index % BUFFER_LENGTH;
+}
+
+void coros::memory::SocketBuffer::reset_read_write_indices() {
+    if (read_index > BUFFER_LENGTH && write_index > BUFFER_LENGTH) {
+        read_index -= BUFFER_LENGTH;
+        write_index -= BUFFER_LENGTH;
     }
-    int dest = 0;
-    int src = start;
-    while (src < end) {
-        buffer[dest] = buffer[src];
-        ++dest;
-        ++src;
-    }
-    start = 0;
-    end = dest;
 }
 
 int coros::memory::SocketBuffer::get_fd() {
@@ -37,9 +33,9 @@ int coros::memory::SocketBuffer::get_fd() {
 }
 
 int coros::memory::SocketBuffer::remaining() {
-    return end - start;
+    return write_index - read_index;
 }
 
 int coros::memory::SocketBuffer::capacity() {
-    return BUFFER_LIMIT - end;
+    return BUFFER_LENGTH - remaining();
 }

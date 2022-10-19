@@ -12,22 +12,11 @@
 #include <optional>
 #include <mutex>
 #include <functional>
+#include <algorithm>
 
 coros::memory::SocketWriteBuffer::SocketWriteBuffer(int socket_fd, async::ThreadPool& thread_pool,
                                                     Socket& socket) 
         : SocketBuffer(socket_fd, thread_pool, socket) {
-}
-
-void coros::memory::SocketWriteBuffer::write(const uint8_t* src, int size) {
-    if (is_closed) {
-        throw std::runtime_error("SocketBuffer write error: Socket already closed");
-    }
-    compact();
-    if (size > capacity()) {
-        throw std::runtime_error("SocketBuffer write error: Write size more than capacity");
-    }
-    std::memcpy(buffer.data() + end, src, size);
-    end += size;
 }
 
 void coros::memory::SocketWriteBuffer::write_b(const uint8_t b) {
@@ -37,23 +26,49 @@ void coros::memory::SocketWriteBuffer::write_b(const uint8_t b) {
     if (capacity() == 0) {
         throw std::runtime_error("SocketBuffer write error: Write size more than capacity");
     }
-    buffer[end] = b;
-    ++end;
+    buffer[get_position(write_index)] = b;
+    ++write_index;
+    reset_read_write_indices();
 }
 
-int coros::memory::SocketWriteBuffer::send_socket() {
-    while (start < end) {
+void coros::memory::SocketWriteBuffer::write(const uint8_t* src, int size) {
+    if (is_closed) {
+        throw std::runtime_error("SocketBuffer write error: Socket already closed");
+    }
+    if (size > capacity()) {
+        throw std::runtime_error("SocketBuffer write error: Write size more than capacity");
+    }
+    for (int i = 0; i < size; ++i) {
+        buffer[get_position(write_index + i)] = *(src + i);
+    }
+    write_index += size;
+    reset_read_write_indices();
+}
+
+int coros::memory::SocketWriteBuffer::send_size(int size) {
+    while (size > 0) {
         if (is_closed) {
             throw std::runtime_error("SocketBuffer write error: Socket already closed");
         }
-        int size_written = send(socket_fd, buffer.data() + start, remaining(), 0);
+        int size_written = send(socket_fd, buffer.data() + get_position(read_index), size, 0);
         if (size_written < 0) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
                 return SOCKET_OP_WOULD_BLOCK;
             }
             throw std::runtime_error(std::string("SocketBuffer send(): ").append(strerror(errno)));
         }
-        start += size_written;
+        read_index += size_written;
+        size -= size_written;
+    }
+    return SOCKET_OP_CONTINUE;
+}
+
+int coros::memory::SocketWriteBuffer::send_socket() {
+    while (remaining() > 0) {
+        int status = send_size(std::min(remaining(), BUFFER_LENGTH - get_position(read_index)));
+        if (status == SOCKET_OP_WOULD_BLOCK) {
+            return status;
+        }
     }
     return SOCKET_OP_CONTINUE;
 }

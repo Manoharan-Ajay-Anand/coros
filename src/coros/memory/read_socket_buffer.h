@@ -20,10 +20,11 @@ namespace coros {
             private:
                 std::mutex read_mutex;
                 std::optional<std::function<void()>> read_handler;
+                int recv_size(int size);
             public:
                 SocketReadBuffer(int socket_fd, async::ThreadPool& thread_pool, Socket& socket);
-                void read(uint8_t* dest, int size);
                 uint8_t read_b();
+                void read(uint8_t* dest, int size);
                 int recv_socket();
                 void set_read_handler(std::function<void()> handler);
                 void on_read(bool can_read);
