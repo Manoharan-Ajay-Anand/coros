@@ -2,6 +2,7 @@
 #define COROS_EVENT_EVENT_H
 
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <mutex>
 #include <condition_variable>
@@ -20,7 +21,7 @@ namespace coros {
             private:
                 bool is_shutdown;
                 std::mutex event_mutex;
-                std::vector<int> events;
+                std::unordered_set<int> event_set;
                 std::condition_variable event_condition;
                 std::mutex handler_mutex;
                 std::unordered_map<int, SocketHandler*> handler_map;

@@ -29,21 +29,17 @@ void coros::event::SocketEventMonitor::deregister_socket(int socket_fd) {
 void coros::event::SocketEventMonitor::listen_for_io(int socket_fd) {
     {
         std::lock_guard<std::mutex> event_lock(event_mutex);
-        events.push_back(socket_fd);
+        event_set.insert(socket_fd);
     }
     event_condition.notify_one();
 }
 
 void coros::event::SocketEventMonitor::populate_events(std::vector<pollfd>& pollfds) {
-    std::sort(events.begin(), events.end());
-    for (auto it = events.begin(); it != events.end(); ++it) {
-        if (pollfds.size() > 0 && pollfds.back().fd == *it) {
-            continue;
-        }
+    for (auto it = event_set.begin(); it != event_set.end(); ++it) {
         pollfd pfd { *it, POLLIN | POLLOUT, 0 };
         pollfds.push_back(pfd);
     }
-    events.clear();
+    event_set.clear();
 }
 
 void coros::event::SocketEventMonitor::trigger_events(std::vector<pollfd>& pollfds) {
@@ -65,7 +61,9 @@ void coros::event::SocketEventMonitor::start() {
     while (true) {
         {
             std::unique_lock<std::mutex> event_lock(event_mutex);
-            event_condition.wait(event_lock, [&] { return !events.empty() || is_shutdown; });
+            event_condition.wait(event_lock, [&] { 
+                return !event_set.empty() || is_shutdown; 
+            });
             if (is_shutdown) {
                 return;
             }
