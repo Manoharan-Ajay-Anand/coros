@@ -39,10 +39,14 @@ void coros::memory::SocketReadBuffer::read(uint8_t* dest, int size) {
     if (size > remaining()) {
         throw std::runtime_error("SocketBuffer read error: Read size more than remaining");
     }
-    for (int i = 0; i < size; ++i) {
-        *(dest + i) = buffer[get_position(read_index + i)];
+    while (size > 0) {
+        int read_position = get_position(read_index);
+        int size_to_read = std::min(size, BUFFER_LENGTH - read_position);
+        std::memcpy(dest, buffer.data() + read_position, size_to_read);
+        size -= size_to_read;
+        dest += size_to_read;
+        read_index += size_to_read;
     }
-    read_index += size;
     reset_read_write_indices();
 }
 

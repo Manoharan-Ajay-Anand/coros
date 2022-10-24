@@ -38,10 +38,14 @@ void coros::memory::SocketWriteBuffer::write(const uint8_t* src, int size) {
     if (size > capacity()) {
         throw std::runtime_error("SocketBuffer write error: Write size more than capacity");
     }
-    for (int i = 0; i < size; ++i) {
-        buffer[get_position(write_index + i)] = *(src + i);
+    while (size > 0) {
+        int write_position = get_position(write_index);
+        int size_to_write = std::min(size, BUFFER_LENGTH - write_position);
+        std::memcpy(buffer.data() + write_position, src, size_to_write);
+        size -= size_to_write;
+        src += size_to_write;
+        write_index += size_to_write;
     }
-    write_index += size;
     reset_read_write_indices();
 }
 
