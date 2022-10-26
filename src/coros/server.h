@@ -1,7 +1,7 @@
 #ifndef COROS_SERVER_H
 #define COROS_SERVER_H
 
-#include "event/event.h"
+#include "event/handler.h"
 #include "async/future.h"
 
 #include <string>
@@ -13,8 +13,12 @@ namespace coros {
     namespace async {
         class ThreadPool;
     }
+
+    namespace event {
+        class SocketEventMonitor;
+    }
     
-    class Server : public event::SocketHandler {
+    class Server : public event::SocketEventHandler {
         private:
             ServerApplication& server_app;
             event::SocketEventMonitor& event_monitor;

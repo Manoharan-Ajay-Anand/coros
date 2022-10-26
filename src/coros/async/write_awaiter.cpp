@@ -13,7 +13,7 @@ void coros::async::SocketWriteAwaiter::write(std::coroutine_handle<> handle) {
             int status = buffer.send_socket();
             write_available();
             if (status == SOCKET_OP_WOULD_BLOCK && size > 0) {
-                return buffer.set_write_handler([&, handle]() {
+                return event_manager.set_write_handler([&, handle]() {
                     write(handle);
                 });
             }
@@ -50,7 +50,7 @@ void coros::async::SocketWriteByteAwaiter::write(std::coroutine_handle<> handle)
     try {
         int status = buffer.send_socket();
         if (status == SOCKET_OP_WOULD_BLOCK && buffer.capacity() == 0) {
-            return buffer.set_write_handler([&, handle]() {
+            return event_manager.set_write_handler([&, handle]() {
                 write(handle);
             });
         }
@@ -79,7 +79,7 @@ void coros::async::SocketFlushAwaiter::flush(std::coroutine_handle<> handle) {
     try {
         int status = buffer.send_socket();
         if (status == SOCKET_OP_WOULD_BLOCK) {
-            return buffer.set_write_handler([&, handle]() {
+            return event_manager.set_write_handler([&, handle]() {
                 flush(handle);
             });
         }

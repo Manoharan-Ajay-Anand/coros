@@ -12,7 +12,9 @@ add_library(coros STATIC
     src/coros/async/read_awaiter.cpp
     src/coros/async/write_awaiter.cpp
     src/coros/async/thread_pool.cpp
-    src/coros/event/event.cpp
+    src/coros/event/executor.cpp
+    src/coros/event/manager.cpp
+    src/coros/event/monitor.cpp
     src/coros/memory/read_socket_buffer.cpp
     src/coros/memory/write_socket_buffer.cpp
     src/coros/memory/socket_buffer.cpp

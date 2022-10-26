@@ -18,17 +18,12 @@ namespace coros {
     namespace memory {
         class SocketReadBuffer : public SocketBuffer {
             private:
-                std::mutex read_mutex;
-                std::optional<std::function<void()>> read_handler;
                 int recv_size(int size);
             public:
-                SocketReadBuffer(int socket_fd, async::ThreadPool& thread_pool, Socket& socket);
+                SocketReadBuffer(int socket_fd);
                 uint8_t read_b();
                 void read(uint8_t* dest, int size);
                 int recv_socket();
-                void set_read_handler(std::function<void()> handler);
-                void on_read(bool can_read);
-                void close();
         };
     }
 }

@@ -1,4 +1,5 @@
-#include "event.h"
+#include "monitor.h"
+#include "handler.h"
 
 #include <vector>
 #include <unordered_map>
@@ -16,7 +17,7 @@ coros::event::SocketEventMonitor::SocketEventMonitor() {
     is_shutdown = false;
 }
 
-void coros::event::SocketEventMonitor::register_socket(int socket_fd, SocketHandler& handler) {
+void coros::event::SocketEventMonitor::register_socket(int socket_fd, SocketEventHandler& handler) {
     std::lock_guard<std::mutex> handler_lock(handler_mutex);
     handler_map[socket_fd] = &handler;
 }

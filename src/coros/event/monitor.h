@@ -1,5 +1,5 @@
-#ifndef COROS_EVENT_EVENT_H
-#define COROS_EVENT_EVENT_H
+#ifndef COROS_EVENT_MONITOR_H
+#define COROS_EVENT_MONITOR_H
 
 #include <unordered_map>
 #include <unordered_set>
@@ -12,11 +12,8 @@
 
 namespace coros {
     namespace event {
-        class SocketHandler {
-            public:
-                virtual void on_socket_event(bool can_read, bool can_write) = 0;
-        };
-
+        struct SocketEventHandler;
+        
         class SocketEventMonitor {
             private:
                 bool is_shutdown;
@@ -24,12 +21,12 @@ namespace coros {
                 std::unordered_set<int> event_set;
                 std::condition_variable event_condition;
                 std::mutex handler_mutex;
-                std::unordered_map<int, SocketHandler*> handler_map;
+                std::unordered_map<int, SocketEventHandler*> handler_map;
                 void populate_events(std::vector<pollfd>& pollfds);
                 void trigger_events(std::vector<pollfd>& pollfds);
             public:
                 SocketEventMonitor();
-                void register_socket(int socket_fd, SocketHandler& handler);
+                void register_socket(int socket_fd, SocketEventHandler& handler);
                 void deregister_socket(int socket_fd);
                 void listen_for_io(int socket_fd);
                 void start();

@@ -6,6 +6,10 @@
 #include <stdexcept>
 
 namespace coros {
+    namespace event {
+        class SocketEventManager;
+    }
+
     namespace memory {
         class SocketReadBuffer;
     }
@@ -14,6 +18,7 @@ namespace coros {
 
     namespace async {
         struct SocketReadAwaiter {
+            event::SocketEventManager& event_manager;
             memory::SocketReadBuffer& buffer;
             uint8_t* dest;
             int offset;
@@ -27,6 +32,7 @@ namespace coros {
         };
 
         struct SocketReadByteAwaiter {
+            event::SocketEventManager& event_manager;
             memory::SocketReadBuffer& buffer;
             std::runtime_error error;
             void read(std::coroutine_handle<> handle);
