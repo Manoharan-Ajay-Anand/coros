@@ -7,18 +7,20 @@
 #include <unordered_map>
 #include <mutex>
 
-namespace coros {
+namespace coros::network {
     class Socket;
 
     class Server;
+}
 
+namespace coros {
     class ServerApplication {
         private:
             std::mutex socket_mutex;
-            std::unordered_map<int, std::weak_ptr<Socket>> socket_map;
+            std::unordered_map<int, std::weak_ptr<network::Socket>> socket_map;
         public:
-            void handle_socket(Server& server, std::shared_ptr<Socket> socket_ptr);
-            virtual async::Future on_request(Server& server, std::shared_ptr<Socket> socket) = 0;
+            void handle_socket(network::Server& server, std::shared_ptr<network::Socket> socket_ptr);
+            virtual async::Future on_request(network::Server& server, std::shared_ptr<network::Socket> socket) = 0;
             void shutdown();
     };
 }

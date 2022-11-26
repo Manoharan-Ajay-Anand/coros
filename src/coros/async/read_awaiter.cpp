@@ -1,21 +1,26 @@
 #include "read_awaiter.h"
-#include "coros/socket.h"
-#include "coros/memory/read_socket_buffer.h"
+#include "coros/event/manager.h"
+#include "coros/memory/buffer.h"
+#include "coros/network/stream.h"
 
 #include <algorithm>
 #include <coroutine>
 #include <iostream>
 #include <stdexcept>
+#include <cstddef>
 
 void coros::async::SocketReadAwaiter::read(std::coroutine_handle<> handle) {
     try {
         while (size > 0) {
-            int status = buffer.recv_socket();
+            int status = stream.recv_from_socket(buffer);
             read_available();
-            if (status == SOCKET_OP_WOULD_BLOCK && size > 0) {
+            if (status == SOCKET_OP_BLOCK && size > 0) {
                 return event_manager.set_read_handler([&, handle]() {
                     read(handle);
                 });
+            }
+            if (status == SOCKET_OP_CLOSE && size > 0) {
+                throw std::runtime_error("Socket has been closed");
             }
         }
     } catch (std::runtime_error error) {
@@ -25,7 +30,7 @@ void coros::async::SocketReadAwaiter::read(std::coroutine_handle<> handle) {
 }
 
 void coros::async::SocketReadAwaiter::read_available() {
-    int sizeToRead = std::min(size, buffer.remaining());
+    int sizeToRead = std::min(size, buffer.get_total_remaining());
     buffer.read(dest + offset, sizeToRead);
     offset += sizeToRead;
     size -= sizeToRead;
@@ -48,11 +53,14 @@ void coros::async::SocketReadAwaiter::await_resume() {
 
 void coros::async::SocketReadByteAwaiter::read(std::coroutine_handle<> handle) {
     try {
-        int status = buffer.recv_socket();
-        if (status == SOCKET_OP_WOULD_BLOCK && buffer.remaining() == 0) {
+        int status = stream.recv_from_socket(buffer);
+        if (status == SOCKET_OP_BLOCK && buffer.get_total_remaining() == 0) {
             return event_manager.set_read_handler([&, handle]() {
                 read(handle);
             });
+        }
+        if (status == SOCKET_OP_CLOSE && buffer.get_total_remaining() == 0) {
+            throw std::runtime_error("Socket has been closed");
         }
     } catch (std::runtime_error error) {
         this->error = error;
@@ -61,15 +69,15 @@ void coros::async::SocketReadByteAwaiter::read(std::coroutine_handle<> handle) {
 }
 
 bool coros::async::SocketReadByteAwaiter::await_ready() noexcept {
-    return buffer.remaining() > 0;
+    return buffer.get_total_remaining() > 0;
 }
 
 void coros::async::SocketReadByteAwaiter::await_suspend(std::coroutine_handle<> handle) {
     read(handle);
 }
 
-uint8_t coros::async::SocketReadByteAwaiter::await_resume() {
-    if (buffer.remaining() == 0) {
+std::byte coros::async::SocketReadByteAwaiter::await_resume() {
+    if (buffer.get_total_remaining() == 0) {
         throw error;
     }
     return buffer.read_b();

@@ -15,12 +15,11 @@ add_library(coros STATIC
     src/coros/event/executor.cpp
     src/coros/event/manager.cpp
     src/coros/event/monitor.cpp
-    src/coros/memory/read_socket_buffer.cpp
-    src/coros/memory/write_socket_buffer.cpp
-    src/coros/memory/socket_buffer.cpp
-    src/coros/app.cpp
-    src/coros/server.cpp
-    src/coros/socket.cpp)
+    src/coros/memory/buffer.cpp
+    src/coros/network/server.cpp
+    src/coros/network/socket.cpp
+    src/coros/network/stream.cpp
+    src/coros/app.cpp)
 
 find_package(Threads REQUIRED)
 target_include_directories(coros PUBLIC src/)

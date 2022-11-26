@@ -1,23 +1,25 @@
 #ifndef COROS_SERVER_H
 #define COROS_SERVER_H
 
-#include "event/handler.h"
-#include "async/future.h"
+#include "coros/event/handler.h"
+#include "coros/async/future.h"
 
 #include <string>
 #include <netdb.h>
 
 namespace coros {
     class ServerApplication;
+}
 
-    namespace async {
-        class ThreadPool;
-    }
+namespace coros::async {
+    class ThreadPool;
+}
 
-    namespace event {
-        class SocketEventMonitor;
-    }
-    
+namespace coros::event {
+    class SocketEventMonitor;
+}
+
+namespace coros::network {
     class Server : public event::SocketEventHandler {
         private:
             ServerApplication& server_app;

@@ -1,8 +1,8 @@
 #include "server.h"
 #include "socket.h"
-#include "app.h"
-#include "async/thread_pool.h"
-#include "event/monitor.h"
+#include "coros/app.h"
+#include "coros/async/thread_pool.h"
+#include "coros/event/monitor.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -17,13 +17,13 @@
 #include <memory>
 #include <mutex>
 
-coros::Server::Server(short port, ServerApplication& server_app,
+coros::network::Server::Server(short port, ServerApplication& server_app,
                       event::SocketEventMonitor& event_monitor, async::ThreadPool& thread_pool) 
         : service(std::to_string(port)), server_app(server_app),
           event_monitor(event_monitor), thread_pool(thread_pool) {
 }
 
-addrinfo* coros::Server::get_local_addr_info() {
+addrinfo* coros::network::Server::get_local_addr_info() {
     int status;
     addrinfo* res;
     addrinfo hints = {};
@@ -37,7 +37,7 @@ addrinfo* coros::Server::get_local_addr_info() {
     return res;
 }
 
-void coros::Server::set_non_blocking(int socket_fd) {
+void coros::network::Server::set_non_blocking(int socket_fd) {
     int flags = fcntl(socket_fd, F_GETFL);
     int status = fcntl(socket_fd, F_SETFL, flags | O_NONBLOCK);
     if (status == -1) {
@@ -45,7 +45,7 @@ void coros::Server::set_non_blocking(int socket_fd) {
     }
 }
 
-void coros::Server::setup() {
+void coros::network::Server::setup() {
     addrinfo* info = get_local_addr_info(); 
     server_socketfd = socket(
         info->ai_family, info->ai_socktype, info->ai_protocol
@@ -71,7 +71,7 @@ void coros::Server::setup() {
     event_monitor.listen_for_io(server_socketfd);
 }
 
-void coros::Server::on_socket_event(bool can_read, bool can_write) {
+void coros::network::Server::on_socket_event(bool can_read, bool can_write) {
     if (!can_read) {
         return event_monitor.listen_for_io(server_socketfd);
     }
@@ -98,14 +98,14 @@ void coros::Server::on_socket_event(bool can_read, bool can_write) {
     }
 }
 
-void coros::Server::start(bool start_async) {
+void coros::network::Server::start(bool start_async) {
     if (start_async) {
         return thread_pool.run([&] { event_monitor.start(); });
     }
     event_monitor.start();
 }
 
-void coros::Server::shutdown() {
+void coros::network::Server::shutdown() {
     event_monitor.shutdown();
     server_app.shutdown();
     thread_pool.shutdown();

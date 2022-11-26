@@ -1,6 +1,7 @@
 #include "write_awaiter.h"
-#include "coros/socket.h"
-#include "coros/memory/write_socket_buffer.h"
+#include "coros/event/manager.h"
+#include "coros/memory/buffer.h"
+#include "coros/network/stream.h"
 
 #include <algorithm>
 #include <coroutine>
@@ -10,12 +11,15 @@
 void coros::async::SocketWriteAwaiter::write(std::coroutine_handle<> handle) {
     try {
         while (size > 0) {
-            int status = buffer.send_socket();
+            int status = stream.send_to_socket(buffer);
             write_available();
-            if (status == SOCKET_OP_WOULD_BLOCK && size > 0) {
+            if (status == SOCKET_OP_BLOCK && size > 0) {
                 return event_manager.set_write_handler([&, handle]() {
                     write(handle);
                 });
+            }
+            if (status == SOCKET_OP_CLOSE && size > 0) {
+                throw std::runtime_error("Socket has been closed");
             }
         }
     } catch (std::runtime_error error) {
@@ -25,7 +29,7 @@ void coros::async::SocketWriteAwaiter::write(std::coroutine_handle<> handle) {
 }
 
 void coros::async::SocketWriteAwaiter::write_available() {
-    int size_to_write = std::min(buffer.capacity(), size);
+    int size_to_write = std::min(buffer.get_total_capacity(), size);
     buffer.write(src + offset, size_to_write);
     offset += size_to_write;
     size -= size_to_write;
@@ -48,11 +52,14 @@ void coros::async::SocketWriteAwaiter::await_resume() {
 
 void coros::async::SocketWriteByteAwaiter::write(std::coroutine_handle<> handle) {
     try {
-        int status = buffer.send_socket();
-        if (status == SOCKET_OP_WOULD_BLOCK && buffer.capacity() == 0) {
+        int status = stream.send_to_socket(buffer);;
+        if (status == SOCKET_OP_BLOCK && buffer.get_total_capacity() == 0) {
             return event_manager.set_write_handler([&, handle]() {
                 write(handle);
             });
+        }
+        if (status == SOCKET_OP_CLOSE && buffer.get_total_capacity() == 0) {
+            throw std::runtime_error("Socket has been closed");
         }
     } catch (std::runtime_error error) {
         this->error = error;
@@ -61,7 +68,7 @@ void coros::async::SocketWriteByteAwaiter::write(std::coroutine_handle<> handle)
 }
 
 bool coros::async::SocketWriteByteAwaiter::await_ready() noexcept {
-    return buffer.capacity() > 0;
+    return buffer.get_total_capacity() > 0;
 }
 
 void coros::async::SocketWriteByteAwaiter::await_suspend(std::coroutine_handle<> handle) {
@@ -69,7 +76,7 @@ void coros::async::SocketWriteByteAwaiter::await_suspend(std::coroutine_handle<>
 }
 
 void coros::async::SocketWriteByteAwaiter::await_resume() {
-    if (buffer.capacity() == 0) {
+    if (buffer.get_total_capacity() == 0) {
         throw error;
     }
     buffer.write_b(b);
@@ -77,11 +84,14 @@ void coros::async::SocketWriteByteAwaiter::await_resume() {
 
 void coros::async::SocketFlushAwaiter::flush(std::coroutine_handle<> handle) {
     try {
-        int status = buffer.send_socket();
-        if (status == SOCKET_OP_WOULD_BLOCK) {
+        int status = stream.send_to_socket(buffer);
+        if (status == SOCKET_OP_BLOCK) {
             return event_manager.set_write_handler([&, handle]() {
                 flush(handle);
             });
+        }
+        if (status == SOCKET_OP_CLOSE && buffer.get_total_remaining() > 0) {
+            throw std::runtime_error("Socket has been closed");
         }
     } catch (std::runtime_error error) {
         this->error = error;
@@ -90,7 +100,7 @@ void coros::async::SocketFlushAwaiter::flush(std::coroutine_handle<> handle) {
 }
 
 bool coros::async::SocketFlushAwaiter::await_ready() noexcept {
-    return buffer.remaining() == 0;
+    return buffer.get_total_remaining() == 0;
 }
 
 void coros::async::SocketFlushAwaiter::await_suspend(std::coroutine_handle<> handle) {
@@ -98,7 +108,7 @@ void coros::async::SocketFlushAwaiter::await_suspend(std::coroutine_handle<> han
 }
 
 void coros::async::SocketFlushAwaiter::await_resume() {
-    if (buffer.remaining() > 0) {
+    if (buffer.get_total_remaining() > 0) {
         throw error;
     }
 }

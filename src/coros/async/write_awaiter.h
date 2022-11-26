@@ -1,57 +1,60 @@
 #ifndef COROS_ASYNC_WRITE_AWAITER_H
 #define COROS_ASYNC_WRITE_AWAITER_H
 
-#include <cstdint>
+#include <cstddef>
 #include <coroutine>
 #include <stdexcept>
 
-namespace coros {
-    namespace event {
-        class SocketEventManager;
-    }
+namespace coros::event {
+    class SocketEventManager;
+}
 
-    namespace memory {
-        class SocketWriteBuffer;
-    }
+namespace coros::memory {
+    class ByteBuffer;
+}
 
-    class Socket;
+namespace coros::network {
+    class SocketStream;
+}
 
-    namespace async {
-        struct SocketWriteAwaiter {
-            event::SocketEventManager& event_manager;
-            memory::SocketWriteBuffer& buffer;
-            const uint8_t* src;
-            int offset;
-            int size;
-            std::runtime_error error;
-            void write(std::coroutine_handle<> handle);
-            void write_available();
-            bool await_ready() noexcept;
-            void await_suspend(std::coroutine_handle<> handle);
-            void await_resume();
-        };
+namespace coros::async {
+    struct SocketWriteAwaiter {
+        network::SocketStream& stream;
+        event::SocketEventManager& event_manager;
+        memory::ByteBuffer& buffer;
+        std::byte* src;
+        int offset;
+        int size;
+        std::runtime_error error;
+        void write(std::coroutine_handle<> handle);
+        void write_available();
+        bool await_ready() noexcept;
+        void await_suspend(std::coroutine_handle<> handle);
+        void await_resume();
+    };
 
-        struct SocketWriteByteAwaiter {
-            event::SocketEventManager& event_manager;
-            memory::SocketWriteBuffer& buffer;
-            const uint8_t b;
-            std::runtime_error error;
-            void write(std::coroutine_handle<> handle);
-            bool await_ready() noexcept;
-            void await_suspend(std::coroutine_handle<> handle);
-            void await_resume();
-        };
+    struct SocketWriteByteAwaiter {
+        network::SocketStream& stream;
+        event::SocketEventManager& event_manager;
+        memory::ByteBuffer& buffer;
+        const std::byte b;
+        std::runtime_error error;
+        void write(std::coroutine_handle<> handle);
+        bool await_ready() noexcept;
+        void await_suspend(std::coroutine_handle<> handle);
+        void await_resume();
+    };
 
-        struct SocketFlushAwaiter {
-            event::SocketEventManager& event_manager;
-            memory::SocketWriteBuffer& buffer;
-            std::runtime_error error;
-            void flush(std::coroutine_handle<> handle);
-            bool await_ready() noexcept;
-            void await_suspend(std::coroutine_handle<> handle);
-            void await_resume();
-        };
-    }
+    struct SocketFlushAwaiter {
+        network::SocketStream& stream;
+        event::SocketEventManager& event_manager;
+        memory::ByteBuffer& buffer;
+        std::runtime_error error;
+        void flush(std::coroutine_handle<> handle);
+        bool await_ready() noexcept;
+        void await_suspend(std::coroutine_handle<> handle);
+        void await_resume();
+    };
 }
 
 #endif
