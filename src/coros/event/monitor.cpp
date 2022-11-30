@@ -4,87 +4,81 @@
 #include <vector>
 #include <unordered_map>
 #include <mutex>
-#include <condition_variable>
 #include <cerrno>
-#include <poll.h>
+#include <sys/epoll.h>
 #include <string>
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
-#include <algorithm>
+#include <unistd.h>
 
 coros::event::SocketEventMonitor::SocketEventMonitor() {
     is_shutdown = false;
+    epoll_fd = epoll_create(100);
+    if (epoll_fd < 0) {
+        throw std::runtime_error(std::string("SocketEventMonitor: ").append(strerror(errno))); 
+    }
 }
 
 void coros::event::SocketEventMonitor::register_socket(int socket_fd, SocketEventHandler& handler) {
     std::lock_guard<std::mutex> handler_lock(handler_mutex);
     handler_map[socket_fd] = &handler;
+    epoll_event e_event;
+    e_event.data.fd = socket_fd;
+    int status = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, socket_fd, &e_event);
+    if (status < 0) {
+        throw std::runtime_error(std::string("SocketEventMonitor register: ").append(strerror(errno))); 
+    } 
 }
 
 void coros::event::SocketEventMonitor::deregister_socket(int socket_fd) {
     std::lock_guard<std::mutex> handler_lock(handler_mutex);
     handler_map.erase(socket_fd);
+    epoll_event e_event;
+    e_event.data.fd = socket_fd;
+    int status = epoll_ctl(epoll_fd, EPOLL_CTL_DEL, socket_fd, &e_event);
+    if (status < 0) {
+        throw std::runtime_error(std::string("SocketEventMonitor deregister: ").append(strerror(errno))); 
+    }
 }
 
 void coros::event::SocketEventMonitor::listen_for_io(int socket_fd) {
-    {
-        std::lock_guard<std::mutex> event_lock(event_mutex);
-        event_set.insert(socket_fd);
+    epoll_event e_event;
+    e_event.data.fd = socket_fd;
+    e_event.events = EPOLLIN | EPOLLOUT | EPOLLONESHOT;
+    int status = epoll_ctl(epoll_fd, EPOLL_CTL_MOD, socket_fd, &e_event);
+    if (status < 0) {
+        throw std::runtime_error(std::string("SocketEventMonitor listen: ").append(strerror(errno))); 
     }
-    event_condition.notify_one();
 }
 
-void coros::event::SocketEventMonitor::populate_events(std::vector<pollfd>& pollfds) {
-    for (auto it = event_set.begin(); it != event_set.end(); ++it) {
-        pollfd pfd { *it, POLLIN | POLLOUT, 0 };
-        pollfds.push_back(pfd);
-    }
-    event_set.clear();
-}
-
-void coros::event::SocketEventMonitor::trigger_events(std::vector<pollfd>& pollfds) {
+void coros::event::SocketEventMonitor::trigger_events(std::vector<epoll_event>& events, int count) {
     std::lock_guard<std::mutex> handler_lock(handler_mutex);
-    for (auto it = pollfds.begin(); it != pollfds.end(); ++it) {
-        pollfd& pfd = *it;
-        bool can_read = (pfd.revents & POLLIN) == POLLIN;
-        bool can_write = (pfd.revents & POLLOUT) == POLLOUT;
-        auto handler_it = handler_map.find(pfd.fd);
+    for (int i = 0; i < count; i++) {
+        epoll_event& event = events[i];
+        bool can_read = (event.events & EPOLLIN) == EPOLLIN;
+        bool can_write = (event.events & EPOLLOUT) == EPOLLOUT;
+        auto handler_it = handler_map.find(event.data.fd);
         if (handler_it != handler_map.end()) {
             handler_it->second->on_socket_event(can_read, can_write);
         }
     }
-    pollfds.clear();
 }
 
 void coros::event::SocketEventMonitor::start() {
-    std::vector<pollfd> pollfds;
-    while (true) {
-        {
-            std::unique_lock<std::mutex> event_lock(event_mutex);
-            event_condition.wait(event_lock, [&] { 
-                return !event_set.empty() || is_shutdown; 
-            });
-            if (is_shutdown) {
-                return;
-            }
-            populate_events(pollfds);
+    std::vector<epoll_event> events(POLL_MAX_EVENTS);
+    while (!is_shutdown) {
+        int count = epoll_wait(epoll_fd, events.data(), POLL_MAX_EVENTS, POLL_TIMEOUT);
+        if (count < 0) {
+            throw std::runtime_error(std::string("SocketEventMonitor start: ").append(strerror(errno)));
         }
-        int fd_count = poll(pollfds.data(), pollfds.size(), POLL_TIMEOUT);
-        if (fd_count == -1) {
-            throw std::runtime_error(std::string("Poll Error: ").append(strerror(errno)));
-        }
-        trigger_events(pollfds);
+        trigger_events(events, count);
     }
 }
 
 void coros::event::SocketEventMonitor::shutdown() {
-    {
-        std::lock_guard<std::mutex> event_lock(event_mutex);
-        if (is_shutdown) {
-            throw std::runtime_error("SocketEventMonitor shutdown() error: already shutdown");
-        }
-        is_shutdown = true;
+    if (is_shutdown.exchange(true)) {
+        throw std::runtime_error("SocketEventMonitor shutdown() error: already shutdown");
     }
-    event_condition.notify_one();
+    close(epoll_fd);
 }

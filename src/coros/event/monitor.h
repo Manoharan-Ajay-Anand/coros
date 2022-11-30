@@ -1,13 +1,14 @@
 #ifndef COROS_EVENT_MONITOR_H
 #define COROS_EVENT_MONITOR_H
 
+#include <atomic>
+#include <mutex>
+#include <sys/epoll.h>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include <mutex>
-#include <condition_variable>
-#include <poll.h>
 
+#define POLL_MAX_EVENTS 1000
 #define POLL_TIMEOUT 2000
 
 namespace coros {
@@ -16,14 +17,11 @@ namespace coros {
         
         class SocketEventMonitor {
             private:
-                bool is_shutdown;
-                std::mutex event_mutex;
-                std::unordered_set<int> event_set;
-                std::condition_variable event_condition;
+                std::atomic_bool is_shutdown;
+                int epoll_fd;
                 std::mutex handler_mutex;
                 std::unordered_map<int, SocketEventHandler*> handler_map;
-                void populate_events(std::vector<pollfd>& pollfds);
-                void trigger_events(std::vector<pollfd>& pollfds);
+                void trigger_events(std::vector<epoll_event>& events, int count);
             public:
                 SocketEventMonitor();
                 void register_socket(int socket_fd, SocketEventHandler& handler);
