@@ -25,5 +25,5 @@ find_package(Threads REQUIRED)
 target_include_directories(coros PUBLIC src/)
 target_link_libraries(coros PRIVATE Threads::Threads)
 
-add_executable(echo examples/echo.cpp)
+add_executable(echo EXCLUDE_FROM_ALL examples/echo.cpp)
 target_link_libraries(echo PRIVATE coros)
