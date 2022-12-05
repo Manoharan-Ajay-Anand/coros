@@ -22,7 +22,7 @@ add_library(coros STATIC
     src/coros/app.cpp)
 
 find_package(Threads REQUIRED)
-target_include_directories(coros PUBLIC src/)
+target_include_directories(coros PUBLIC src)
 target_link_libraries(coros PRIVATE Threads::Threads)
 
 add_executable(echo EXCLUDE_FROM_ALL examples/echo.cpp)
