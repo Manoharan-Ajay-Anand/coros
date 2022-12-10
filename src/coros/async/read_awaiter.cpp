@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <cstddef>
 
-void coros::async::SocketReadAwaiter::read(std::coroutine_handle<> handle) {
+void coros::base::SocketReadAwaiter::read(std::coroutine_handle<> handle) {
     try {
         while (size > 0) {
             int status = stream.recv_from_socket(buffer);
@@ -29,29 +29,29 @@ void coros::async::SocketReadAwaiter::read(std::coroutine_handle<> handle) {
     handle.resume();
 }
 
-void coros::async::SocketReadAwaiter::read_available() {
+void coros::base::SocketReadAwaiter::read_available() {
     int sizeToRead = std::min(size, buffer.get_total_remaining());
     buffer.read(dest + offset, sizeToRead);
     offset += sizeToRead;
     size -= sizeToRead;
 }
 
-bool coros::async::SocketReadAwaiter::await_ready() noexcept {
+bool coros::base::SocketReadAwaiter::await_ready() noexcept {
     read_available();
     return size == 0;
 }
 
-void coros::async::SocketReadAwaiter::await_suspend(std::coroutine_handle<> handle) {
+void coros::base::SocketReadAwaiter::await_suspend(std::coroutine_handle<> handle) {
     read(handle);
 }
 
-void coros::async::SocketReadAwaiter::await_resume() {
+void coros::base::SocketReadAwaiter::await_resume() {
     if (size > 0) {
         throw error;
     }
 }
 
-void coros::async::SocketReadByteAwaiter::read(std::coroutine_handle<> handle) {
+void coros::base::SocketReadByteAwaiter::read(std::coroutine_handle<> handle) {
     try {
         int status = stream.recv_from_socket(buffer);
         if (status == SOCKET_OP_BLOCK && buffer.get_total_remaining() == 0) {
@@ -68,15 +68,15 @@ void coros::async::SocketReadByteAwaiter::read(std::coroutine_handle<> handle) {
     handle.resume();
 }
 
-bool coros::async::SocketReadByteAwaiter::await_ready() noexcept {
+bool coros::base::SocketReadByteAwaiter::await_ready() noexcept {
     return buffer.get_total_remaining() > 0;
 }
 
-void coros::async::SocketReadByteAwaiter::await_suspend(std::coroutine_handle<> handle) {
+void coros::base::SocketReadByteAwaiter::await_suspend(std::coroutine_handle<> handle) {
     read(handle);
 }
 
-std::byte coros::async::SocketReadByteAwaiter::await_resume() {
+std::byte coros::base::SocketReadByteAwaiter::await_resume() {
     if (buffer.get_total_remaining() == 0) {
         throw error;
     }

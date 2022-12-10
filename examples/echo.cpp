@@ -14,11 +14,11 @@
 #include <vector>
 #include <cstddef>
 
-class EchoApplication : public coros::ServerApplication {
+class EchoApplication : public coros::base::ServerApplication {
     private:
         std::string newline = "\r\n";
 
-        coros::async::AwaitableValue<std::string> get_input(coros::network::Socket* socket) {
+        coros::base::AwaitableValue<std::string> get_input(coros::base::Socket* socket) {
             std::string input;
             char c = static_cast<char>(co_await socket->read_b());
             while (c != '\n') {
@@ -30,7 +30,7 @@ class EchoApplication : public coros::ServerApplication {
             co_return std::move(input);
         }
 
-        coros::async::AwaitableFuture echo(coros::network::Socket* socket, std::string& input) {
+        coros::base::AwaitableFuture echo(coros::base::Socket* socket, std::string& input) {
             co_await socket->write(reinterpret_cast<std::byte*>(input.data()), input.size());
             co_await socket->write(reinterpret_cast<std::byte*>(newline.data()), 
                                    newline.size());
@@ -38,8 +38,8 @@ class EchoApplication : public coros::ServerApplication {
         }
 
     public:
-        coros::async::Future on_request(coros::network::Server& server, 
-                                        std::shared_ptr<coros::network::Socket> socket) {
+        coros::base::Future on_request(coros::base::Server& server, 
+                                        std::shared_ptr<coros::base::Socket> socket) {
             try {
                 const std::string close_cmd = "close";
                 while (true) {
@@ -60,7 +60,7 @@ class EchoApplication : public coros::ServerApplication {
 };
 
 
-void start_server(coros::network::Server& server) {
+void start_server(coros::base::Server& server) {
     try {
         server.setup();
         server.start(true);
@@ -72,10 +72,10 @@ void start_server(coros::network::Server& server) {
 }
 
 int main() {
-    coros::async::ThreadPool thread_pool;
-    coros::event::SocketEventMonitor event_monitor;
+    coros::base::ThreadPool thread_pool;
+    coros::base::SocketEventMonitor event_monitor;
     EchoApplication echo_app;
-    coros::network::Server echo_server(1025, echo_app, event_monitor, thread_pool);
+    coros::base::Server echo_server(1025, echo_app, event_monitor, thread_pool);
     std::cout << "Starting Server..." << std::endl;
     start_server(echo_server);
     return 0;

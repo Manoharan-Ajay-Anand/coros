@@ -5,23 +5,17 @@
 #include <coroutine>
 #include <stdexcept>
 
-namespace coros::event {
+namespace coros::base {
     class SocketEventManager;
-}
 
-namespace coros::memory {
     class ByteBuffer;
-}
 
-namespace coros::network {
     class SocketStream;
-}
 
-namespace coros::async {
     struct SocketReadAwaiter {
-        network::SocketStream& stream;
-        event::SocketEventManager& event_manager;
-        memory::ByteBuffer& buffer;
+        SocketStream& stream;
+        SocketEventManager& event_manager;
+        ByteBuffer& buffer;
         std::byte* dest;
         int offset;
         int size;
@@ -34,9 +28,9 @@ namespace coros::async {
     };
 
     struct SocketReadByteAwaiter {
-        network::SocketStream& stream;
-        event::SocketEventManager& event_manager;
-        memory::ByteBuffer& buffer;
+        SocketStream& stream;
+        SocketEventManager& event_manager;
+        ByteBuffer& buffer;
         std::runtime_error error;
         void read(std::coroutine_handle<> handle);
         bool await_ready() noexcept;

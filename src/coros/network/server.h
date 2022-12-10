@@ -7,31 +7,25 @@
 #include <string>
 #include <netdb.h>
 
-namespace coros {
+namespace coros::base {
     class ServerApplication;
-}
 
-namespace coros::async {
     class ThreadPool;
-}
 
-namespace coros::event {
     class SocketEventMonitor;
-}
 
-namespace coros::network {
-    class Server : public event::SocketEventHandler {
+    class Server : public SocketEventHandler {
         private:
             ServerApplication& server_app;
-            event::SocketEventMonitor& event_monitor;
-            async::ThreadPool& thread_pool;
+            SocketEventMonitor& event_monitor;
+            ThreadPool& thread_pool;
             std::string service;
             int server_socketfd;
             addrinfo* get_local_addr_info();
             void set_non_blocking(int socket_fd);
         public:
-            Server(short port, ServerApplication& server_app,
-                   event::SocketEventMonitor& event_monitor, async::ThreadPool& thread_pool);
+            Server(short port, ServerApplication& server_app, SocketEventMonitor& event_monitor, 
+                   ThreadPool& thread_pool);
             void on_socket_event(bool can_read, bool can_write);
             void setup();
             void start(bool start_async);

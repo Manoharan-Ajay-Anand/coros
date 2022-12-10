@@ -8,7 +8,7 @@
 #include <iostream>
 #include <stdexcept>
 
-void coros::async::SocketWriteAwaiter::write(std::coroutine_handle<> handle) {
+void coros::base::SocketWriteAwaiter::write(std::coroutine_handle<> handle) {
     try {
         while (size > 0) {
             int status = stream.send_to_socket(buffer);
@@ -28,29 +28,29 @@ void coros::async::SocketWriteAwaiter::write(std::coroutine_handle<> handle) {
     handle.resume();
 }
 
-void coros::async::SocketWriteAwaiter::write_available() {
+void coros::base::SocketWriteAwaiter::write_available() {
     int size_to_write = std::min(buffer.get_total_capacity(), size);
     buffer.write(src + offset, size_to_write);
     offset += size_to_write;
     size -= size_to_write;
 }
 
-bool coros::async::SocketWriteAwaiter::await_ready() noexcept {
+bool coros::base::SocketWriteAwaiter::await_ready() noexcept {
     write_available();
     return size == 0;
 }
 
-void coros::async::SocketWriteAwaiter::await_suspend(std::coroutine_handle<> handle) {
+void coros::base::SocketWriteAwaiter::await_suspend(std::coroutine_handle<> handle) {
     write(handle);
 }
 
-void coros::async::SocketWriteAwaiter::await_resume() {
+void coros::base::SocketWriteAwaiter::await_resume() {
     if (size > 0) {
         throw error;
     }
 }
 
-void coros::async::SocketWriteByteAwaiter::write(std::coroutine_handle<> handle) {
+void coros::base::SocketWriteByteAwaiter::write(std::coroutine_handle<> handle) {
     try {
         int status = stream.send_to_socket(buffer);;
         if (status == SOCKET_OP_BLOCK && buffer.get_total_capacity() == 0) {
@@ -67,22 +67,22 @@ void coros::async::SocketWriteByteAwaiter::write(std::coroutine_handle<> handle)
     handle.resume();
 }
 
-bool coros::async::SocketWriteByteAwaiter::await_ready() noexcept {
+bool coros::base::SocketWriteByteAwaiter::await_ready() noexcept {
     return buffer.get_total_capacity() > 0;
 }
 
-void coros::async::SocketWriteByteAwaiter::await_suspend(std::coroutine_handle<> handle) {
+void coros::base::SocketWriteByteAwaiter::await_suspend(std::coroutine_handle<> handle) {
     write(handle);
 }
 
-void coros::async::SocketWriteByteAwaiter::await_resume() {
+void coros::base::SocketWriteByteAwaiter::await_resume() {
     if (buffer.get_total_capacity() == 0) {
         throw error;
     }
     buffer.write_b(b);
 }
 
-void coros::async::SocketFlushAwaiter::flush(std::coroutine_handle<> handle) {
+void coros::base::SocketFlushAwaiter::flush(std::coroutine_handle<> handle) {
     try {
         int status = stream.send_to_socket(buffer);
         if (status == SOCKET_OP_BLOCK) {
@@ -99,15 +99,15 @@ void coros::async::SocketFlushAwaiter::flush(std::coroutine_handle<> handle) {
     handle.resume();
 }
 
-bool coros::async::SocketFlushAwaiter::await_ready() noexcept {
+bool coros::base::SocketFlushAwaiter::await_ready() noexcept {
     return buffer.get_total_remaining() == 0;
 }
 
-void coros::async::SocketFlushAwaiter::await_suspend(std::coroutine_handle<> handle) {
+void coros::base::SocketFlushAwaiter::await_suspend(std::coroutine_handle<> handle) {
     flush(handle);
 }
 
-void coros::async::SocketFlushAwaiter::await_resume() {
+void coros::base::SocketFlushAwaiter::await_resume() {
     if (buffer.get_total_remaining() > 0) {
         throw error;
     }

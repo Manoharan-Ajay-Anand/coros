@@ -1,9 +1,9 @@
 #include "manager.h"
 #include "monitor.h"
 
-coros::event::SocketEventManager::SocketEventManager(int socket_fd, 
+coros::base::SocketEventManager::SocketEventManager(int socket_fd, 
                                                      SocketEventMonitor& event_monitor,
-                                                     async::ThreadPool& thread_pool) 
+                                                     ThreadPool& thread_pool) 
         : event_monitor(event_monitor), read_executor(thread_pool), write_executor(thread_pool) {
     this->socket_fd = socket_fd;
     this->waiting_for_io = false;
@@ -11,13 +11,13 @@ coros::event::SocketEventManager::SocketEventManager(int socket_fd,
     event_monitor.register_socket(socket_fd, *this);
 }
 
-void coros::event::SocketEventManager::listen_for_io() {
+void coros::base::SocketEventManager::listen_for_io() {
     if (!waiting_for_io.exchange(true)) {
         event_monitor.listen_for_io(socket_fd);
     }
 }
 
-void coros::event::SocketEventManager::on_socket_event(bool can_read, bool can_write) {
+void coros::base::SocketEventManager::on_socket_event(bool can_read, bool can_write) {
     if (marked_for_close) {
         return;
     }
@@ -35,17 +35,17 @@ void coros::event::SocketEventManager::on_socket_event(bool can_read, bool can_w
     }
 }
 
-void coros::event::SocketEventManager::set_read_handler(std::function<void()> handler) {
+void coros::base::SocketEventManager::set_read_handler(std::function<void()> handler) {
     read_executor.set_handler(handler);
     listen_for_io();
 }
 
-void coros::event::SocketEventManager::set_write_handler(std::function<void()> handler) {
+void coros::base::SocketEventManager::set_write_handler(std::function<void()> handler) {
     write_executor.set_handler(handler);
     listen_for_io();
 }
 
-void coros::event::SocketEventManager::close() {
+void coros::base::SocketEventManager::close() {
     if (marked_for_close.exchange(true)) {
         return;
     }

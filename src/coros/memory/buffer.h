@@ -3,7 +3,7 @@
 
 #include <cstddef>
 
-namespace coros::memory {
+namespace coros::base {
     struct IOChunk {
         std::byte* data;
         int size;

@@ -12,7 +12,7 @@
 #include <stdexcept>
 #include <unistd.h>
 
-coros::event::SocketEventMonitor::SocketEventMonitor() {
+coros::base::SocketEventMonitor::SocketEventMonitor() {
     is_shutdown = false;
     epoll_fd = epoll_create(100);
     if (epoll_fd < 0) {
@@ -20,7 +20,7 @@ coros::event::SocketEventMonitor::SocketEventMonitor() {
     }
 }
 
-void coros::event::SocketEventMonitor::register_socket(int socket_fd, SocketEventHandler& handler) {
+void coros::base::SocketEventMonitor::register_socket(int socket_fd, SocketEventHandler& handler) {
     std::lock_guard<std::mutex> handler_lock(handler_mutex);
     handler_map[socket_fd] = &handler;
     epoll_event e_event;
@@ -31,7 +31,7 @@ void coros::event::SocketEventMonitor::register_socket(int socket_fd, SocketEven
     } 
 }
 
-void coros::event::SocketEventMonitor::deregister_socket(int socket_fd) {
+void coros::base::SocketEventMonitor::deregister_socket(int socket_fd) {
     std::lock_guard<std::mutex> handler_lock(handler_mutex);
     handler_map.erase(socket_fd);
     epoll_event e_event;
@@ -42,7 +42,7 @@ void coros::event::SocketEventMonitor::deregister_socket(int socket_fd) {
     }
 }
 
-void coros::event::SocketEventMonitor::listen_for_io(int socket_fd) {
+void coros::base::SocketEventMonitor::listen_for_io(int socket_fd) {
     epoll_event e_event;
     e_event.data.fd = socket_fd;
     e_event.events = EPOLLIN | EPOLLOUT | EPOLLONESHOT;
@@ -52,7 +52,7 @@ void coros::event::SocketEventMonitor::listen_for_io(int socket_fd) {
     }
 }
 
-void coros::event::SocketEventMonitor::trigger_events(std::vector<epoll_event>& events, int count) {
+void coros::base::SocketEventMonitor::trigger_events(std::vector<epoll_event>& events, int count) {
     std::lock_guard<std::mutex> handler_lock(handler_mutex);
     for (int i = 0; i < count; i++) {
         epoll_event& event = events[i];
@@ -65,7 +65,7 @@ void coros::event::SocketEventMonitor::trigger_events(std::vector<epoll_event>& 
     }
 }
 
-void coros::event::SocketEventMonitor::start() {
+void coros::base::SocketEventMonitor::start() {
     std::vector<epoll_event> events(POLL_MAX_EVENTS);
     while (!is_shutdown) {
         int count = epoll_wait(epoll_fd, events.data(), POLL_MAX_EVENTS, POLL_TIMEOUT);
@@ -76,7 +76,7 @@ void coros::event::SocketEventMonitor::start() {
     }
 }
 
-void coros::event::SocketEventMonitor::shutdown() {
+void coros::base::SocketEventMonitor::shutdown() {
     if (is_shutdown.exchange(true)) {
         throw std::runtime_error("SocketEventMonitor shutdown() error: already shutdown");
     }

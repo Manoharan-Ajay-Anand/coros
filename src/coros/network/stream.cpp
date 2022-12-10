@@ -7,17 +7,17 @@
 #include <string>
 #include <sys/socket.h>
 
-coros::network::SocketStream::SocketStream(int socket_fd) {
+coros::base::SocketStream::SocketStream(int socket_fd) {
     this->socket_fd = socket_fd;
     this->is_closed = false;
 }
 
-int coros::network::SocketStream::recv_from_socket(memory::ByteBuffer& buffer) {
+int coros::base::SocketStream::recv_from_socket(ByteBuffer& buffer) {
     if (is_closed) {
         return SOCKET_OP_CLOSE;
     }
     while (buffer.get_total_capacity() > 0) {
-        coros::memory::IOChunk chunk = buffer.get_write_chunk();
+        coros::base::IOChunk chunk = buffer.get_write_chunk();
         int size_read = recv(socket_fd, chunk.data, chunk.size, 0);
         if (size_read == 0) {
             this->close();
@@ -34,12 +34,12 @@ int coros::network::SocketStream::recv_from_socket(memory::ByteBuffer& buffer) {
     return SOCKET_OP_SUCCESS;
 }
 
-int coros::network::SocketStream::send_to_socket(memory::ByteBuffer& buffer) {
+int coros::base::SocketStream::send_to_socket(ByteBuffer& buffer) {
     if (is_closed) {
         return SOCKET_OP_CLOSE;
     }
     while (buffer.get_total_remaining() > 0) {
-        coros::memory::IOChunk chunk = buffer.get_read_chunk();
+        coros::base::IOChunk chunk = buffer.get_read_chunk();
         int size_written = send(socket_fd, chunk.data, chunk.size, 0);
         if (size_written == 0) {
             this->close();
@@ -56,6 +56,6 @@ int coros::network::SocketStream::send_to_socket(memory::ByteBuffer& buffer) {
     return SOCKET_OP_SUCCESS;
 }
 
-void coros::network::SocketStream::close() {
+void coros::base::SocketStream::close() {
     is_closed = true;
 }

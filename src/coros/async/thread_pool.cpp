@@ -6,15 +6,15 @@
 #include <stdexcept>
 #include <mutex>
 
-coros::async::ThreadPool::ThreadPool() : max_threads(std::thread::hardware_concurrency()) {
+coros::base::ThreadPool::ThreadPool() : max_threads(std::thread::hardware_concurrency()) {
     is_shutdown = false;
 }
 
-coros::async::ThreadPool::ThreadPool(int max_threads) : max_threads(max_threads) {
+coros::base::ThreadPool::ThreadPool(int max_threads) : max_threads(max_threads) {
     is_shutdown = false;    
 }
 
-void coros::async::ThreadPool::run_jobs() {
+void coros::base::ThreadPool::run_jobs() {
     while (true) {
         std::function<void()> job;
         {
@@ -34,7 +34,7 @@ void coros::async::ThreadPool::run_jobs() {
     }
 }
 
-void coros::async::ThreadPool::run(std::function<void()> job) {
+void coros::base::ThreadPool::run(std::function<void()> job) {
     {
         std::lock_guard<std::mutex> guard(jobs_mutex);
         if (is_shutdown) {
@@ -48,7 +48,7 @@ void coros::async::ThreadPool::run(std::function<void()> job) {
     jobs_condition.notify_one();
 }
 
-void coros::async::ThreadPool::shutdown() {
+void coros::base::ThreadPool::shutdown() {
     {
         std::lock_guard<std::mutex> guard(jobs_mutex);
         if (is_shutdown) {

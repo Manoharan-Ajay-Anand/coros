@@ -5,23 +5,17 @@
 #include <coroutine>
 #include <stdexcept>
 
-namespace coros::event {
+namespace coros::base {
     class SocketEventManager;
-}
 
-namespace coros::memory {
     class ByteBuffer;
-}
 
-namespace coros::network {
     class SocketStream;
-}
 
-namespace coros::async {
     struct SocketWriteAwaiter {
-        network::SocketStream& stream;
-        event::SocketEventManager& event_manager;
-        memory::ByteBuffer& buffer;
+        SocketStream& stream;
+        SocketEventManager& event_manager;
+        ByteBuffer& buffer;
         std::byte* src;
         int offset;
         int size;
@@ -34,9 +28,9 @@ namespace coros::async {
     };
 
     struct SocketWriteByteAwaiter {
-        network::SocketStream& stream;
-        event::SocketEventManager& event_manager;
-        memory::ByteBuffer& buffer;
+        SocketStream& stream;
+        SocketEventManager& event_manager;
+        ByteBuffer& buffer;
         const std::byte b;
         std::runtime_error error;
         void write(std::coroutine_handle<> handle);
@@ -46,9 +40,9 @@ namespace coros::async {
     };
 
     struct SocketFlushAwaiter {
-        network::SocketStream& stream;
-        event::SocketEventManager& event_manager;
-        memory::ByteBuffer& buffer;
+        SocketStream& stream;
+        SocketEventManager& event_manager;
+        ByteBuffer& buffer;
         std::runtime_error error;
         void flush(std::coroutine_handle<> handle);
         bool await_ready() noexcept;
