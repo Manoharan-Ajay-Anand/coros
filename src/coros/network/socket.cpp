@@ -29,6 +29,10 @@ coros::base::SocketReadByteAwaiter coros::base::Socket::read_b() {
     return { stream, event_manager, input_buffer, std::runtime_error("") };
 }
 
+coros::base::SocketSkipAwaiter coros::base::Socket::skip(int size) {
+    return { stream, event_manager, input_buffer, size, std::runtime_error("") };
+}
+
 coros::base::SocketWriteAwaiter coros::base::Socket::write(std::byte* src, int size) {
     return { stream, event_manager, output_buffer, src, 0, size, std::runtime_error("") };
 }

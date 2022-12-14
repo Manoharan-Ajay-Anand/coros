@@ -52,7 +52,7 @@ void coros::base::SocketWriteAwaiter::await_resume() {
 
 void coros::base::SocketWriteByteAwaiter::write(std::coroutine_handle<> handle) {
     try {
-        int status = stream.send_to_socket(buffer);;
+        int status = stream.send_to_socket(buffer);
         if (status == SOCKET_OP_BLOCK && buffer.get_total_capacity() == 0) {
             return event_manager.set_write_handler([&, handle]() {
                 write(handle);

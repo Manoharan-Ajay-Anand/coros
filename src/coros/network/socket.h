@@ -33,6 +33,7 @@ namespace coros::base {
                    ThreadPool& thread_pool);
             SocketReadAwaiter read(std::byte* dest, int size);
             SocketReadByteAwaiter read_b();
+            SocketSkipAwaiter skip(int size);
             SocketWriteAwaiter write(std::byte* src, int size);
             SocketWriteByteAwaiter write_b(const std::byte b);
             SocketFlushAwaiter flush();

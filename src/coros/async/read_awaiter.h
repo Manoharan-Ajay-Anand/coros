@@ -27,6 +27,19 @@ namespace coros::base {
         void await_resume();
     };
 
+    struct SocketSkipAwaiter {
+        SocketStream& stream;
+        SocketEventManager& event_manager;
+        ByteBuffer& buffer;
+        int size;
+        std::runtime_error error;
+        void skip(std::coroutine_handle<> handle);
+        void skip_available();
+        bool await_ready() noexcept;
+        void await_suspend(std::coroutine_handle<> handle);
+        void await_resume();
+    };
+
     struct SocketReadByteAwaiter {
         SocketStream& stream;
         SocketEventManager& event_manager;
