@@ -1,14 +1,16 @@
 #ifndef COROS_NETWORK_STREAM_H
 #define COROS_NETWORK_STREAM_H
 
-#define SOCKET_OP_BLOCK 0
-#define SOCKET_OP_CLOSE 1
-#define SOCKET_OP_SUCCESS 2
-
 #include <atomic>
 
 namespace coros::base {
     class ByteBuffer;
+
+    enum SocketOperation {
+        SOCKET_OP_BLOCK,
+        SOCKET_OP_CLOSE,
+        SOCKET_OP_SUCCESS
+    };
 
     class SocketStream {
         private:
@@ -16,8 +18,8 @@ namespace coros::base {
             std::atomic_bool is_closed;
         public:
             SocketStream(int socket_fd);
-            int recv_from_socket(ByteBuffer& buffer);
-            int send_to_socket(ByteBuffer& buffer);
+            SocketOperation recv_from_socket(ByteBuffer& buffer);
+            SocketOperation send_to_socket(ByteBuffer& buffer);
             void close();
     }; 
 }

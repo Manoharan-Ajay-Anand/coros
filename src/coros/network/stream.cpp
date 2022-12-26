@@ -12,7 +12,7 @@ coros::base::SocketStream::SocketStream(int socket_fd) {
     this->is_closed = false;
 }
 
-int coros::base::SocketStream::recv_from_socket(ByteBuffer& buffer) {
+coros::base::SocketOperation coros::base::SocketStream::recv_from_socket(ByteBuffer& buffer) {
     if (is_closed) {
         return SOCKET_OP_CLOSE;
     }
@@ -34,7 +34,7 @@ int coros::base::SocketStream::recv_from_socket(ByteBuffer& buffer) {
     return SOCKET_OP_SUCCESS;
 }
 
-int coros::base::SocketStream::send_to_socket(ByteBuffer& buffer) {
+coros::base::SocketOperation coros::base::SocketStream::send_to_socket(ByteBuffer& buffer) {
     if (is_closed) {
         return SOCKET_OP_CLOSE;
     }
