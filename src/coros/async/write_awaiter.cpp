@@ -11,7 +11,7 @@
 void coros::base::SocketWriteAwaiter::write(std::coroutine_handle<> handle) {
     try {
         while (size > 0) {
-            int status = stream.send_to_socket(buffer);
+            SocketOperation status = stream.send_to_socket(buffer);
             write_available();
             if (status == SOCKET_OP_BLOCK && size > 0) {
                 return event_manager.set_write_handler([&, handle]() {
@@ -29,9 +29,9 @@ void coros::base::SocketWriteAwaiter::write(std::coroutine_handle<> handle) {
 }
 
 void coros::base::SocketWriteAwaiter::write_available() {
-    int size_to_write = std::min(buffer.get_total_capacity(), size);
-    buffer.write(src + offset, size_to_write);
-    offset += size_to_write;
+    long long size_to_write = std::min(buffer.get_total_capacity(), size);
+    buffer.write(src, size_to_write);
+    src += size_to_write;
     size -= size_to_write;
 }
 
@@ -52,7 +52,7 @@ void coros::base::SocketWriteAwaiter::await_resume() {
 
 void coros::base::SocketWriteByteAwaiter::write(std::coroutine_handle<> handle) {
     try {
-        int status = stream.send_to_socket(buffer);
+        SocketOperation status = stream.send_to_socket(buffer);
         if (status == SOCKET_OP_BLOCK && buffer.get_total_capacity() == 0) {
             return event_manager.set_write_handler([&, handle]() {
                 write(handle);
@@ -84,7 +84,7 @@ void coros::base::SocketWriteByteAwaiter::await_resume() {
 
 void coros::base::SocketFlushAwaiter::flush(std::coroutine_handle<> handle) {
     try {
-        int status = stream.send_to_socket(buffer);
+        SocketOperation status = stream.send_to_socket(buffer);
         if (status == SOCKET_OP_BLOCK) {
             return event_manager.set_write_handler([&, handle]() {
                 flush(handle);

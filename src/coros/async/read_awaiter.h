@@ -17,8 +17,7 @@ namespace coros::base {
         SocketEventManager& event_manager;
         ByteBuffer& buffer;
         std::byte* dest;
-        int offset;
-        int size;
+        long long size;
         std::runtime_error error;
         void read(std::coroutine_handle<> handle);
         void read_available();
@@ -31,7 +30,7 @@ namespace coros::base {
         SocketStream& stream;
         SocketEventManager& event_manager;
         ByteBuffer& buffer;
-        int size;
+        long long size;
         std::runtime_error error;
         void skip(std::coroutine_handle<> handle);
         void skip_available();

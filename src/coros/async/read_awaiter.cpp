@@ -12,7 +12,7 @@
 void coros::base::SocketReadAwaiter::read(std::coroutine_handle<> handle) {
     try {
         while (size > 0) {
-            int status = stream.recv_from_socket(buffer);
+            SocketOperation status = stream.recv_from_socket(buffer);
             read_available();
             if (status == SOCKET_OP_BLOCK && size > 0) {
                 return event_manager.set_read_handler([&, handle]() {
@@ -30,9 +30,9 @@ void coros::base::SocketReadAwaiter::read(std::coroutine_handle<> handle) {
 }
 
 void coros::base::SocketReadAwaiter::read_available() {
-    int size_to_read = std::min(size, buffer.get_total_remaining());
-    buffer.read(dest + offset, size_to_read);
-    offset += size_to_read;
+    long long size_to_read = std::min(size, buffer.get_total_remaining());
+    buffer.read(dest, size_to_read);
+    dest += size_to_read;
     size -= size_to_read;
 }
 
@@ -54,7 +54,7 @@ void coros::base::SocketReadAwaiter::await_resume() {
 void coros::base::SocketSkipAwaiter::skip(std::coroutine_handle<> handle) {
     try {
         while (size > 0) {
-            int status = stream.recv_from_socket(buffer);
+            SocketOperation status = stream.recv_from_socket(buffer);
             skip_available();
             if (status == SOCKET_OP_BLOCK && size > 0) {
                 return event_manager.set_read_handler([&, handle]() {
@@ -72,7 +72,7 @@ void coros::base::SocketSkipAwaiter::skip(std::coroutine_handle<> handle) {
 }
 
 void coros::base::SocketSkipAwaiter::skip_available() {
-    int size_to_skip = std::min(size, buffer.get_total_remaining());
+    long long size_to_skip = std::min(size, buffer.get_total_remaining());
     buffer.increment_read_pointer(size_to_skip);
     size -= size_to_skip;
 }
@@ -94,7 +94,7 @@ void coros::base::SocketSkipAwaiter::await_resume() {
 
 void coros::base::SocketReadByteAwaiter::read(std::coroutine_handle<> handle) {
     try {
-        int status = stream.recv_from_socket(buffer);
+        SocketOperation status = stream.recv_from_socket(buffer);
         if (status == SOCKET_OP_BLOCK && buffer.get_total_remaining() == 0) {
             return event_manager.set_read_handler([&, handle]() {
                 read(handle);

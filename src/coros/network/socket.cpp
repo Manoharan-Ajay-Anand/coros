@@ -21,20 +21,20 @@ coros::base::Socket::Socket(SocketDetails details, SocketEventMonitor& event_mon
           output_buffer(SOCKET_BUFFER_SIZE) {
 }
 
-coros::base::SocketReadAwaiter coros::base::Socket::read(std::byte* dest, int size) {
-    return { stream, event_manager, input_buffer, dest, 0, size, std::runtime_error("") };
+coros::base::SocketReadAwaiter coros::base::Socket::read(std::byte* dest, long long size) {
+    return { stream, event_manager, input_buffer, dest, size, std::runtime_error("") };
 }
 
 coros::base::SocketReadByteAwaiter coros::base::Socket::read_b() {
     return { stream, event_manager, input_buffer, std::runtime_error("") };
 }
 
-coros::base::SocketSkipAwaiter coros::base::Socket::skip(int size) {
+coros::base::SocketSkipAwaiter coros::base::Socket::skip(long long size) {
     return { stream, event_manager, input_buffer, size, std::runtime_error("") };
 }
 
-coros::base::SocketWriteAwaiter coros::base::Socket::write(std::byte* src, int size) {
-    return { stream, event_manager, output_buffer, src, 0, size, std::runtime_error("") };
+coros::base::SocketWriteAwaiter coros::base::Socket::write(std::byte* src, long long size) {
+    return { stream, event_manager, output_buffer, src, size, std::runtime_error("") };
 }
 
 coros::base::SocketWriteByteAwaiter coros::base::Socket::write_b(const std::byte b) {

@@ -17,8 +17,7 @@ namespace coros::base {
         SocketEventManager& event_manager;
         ByteBuffer& buffer;
         std::byte* src;
-        int offset;
-        int size;
+        long long size;
         std::runtime_error error;
         void write(std::coroutine_handle<> handle);
         void write_available();
