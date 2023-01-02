@@ -9,9 +9,11 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcoroutines")
 
 add_library(coros STATIC
-    src/coros/async/read_awaiter.cpp
-    src/coros/async/write_awaiter.cpp
     src/coros/async/thread_pool.cpp
+    src/coros/awaiter/flush_awaiter.cpp
+    src/coros/awaiter/read_awaiter.cpp
+    src/coros/awaiter/skip_awaiter.cpp
+    src/coros/awaiter/write_awaiter.cpp
     src/coros/event/executor.cpp
     src/coros/event/manager.cpp
     src/coros/event/monitor.cpp

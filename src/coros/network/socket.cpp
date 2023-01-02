@@ -2,8 +2,10 @@
 #include "server.h"
 #include "coros/async/thread_pool.h"
 #include "coros/event/manager.h"
-#include "coros/async/read_awaiter.h"
-#include "coros/async/write_awaiter.h"
+#include "coros/awaiter/flush_awaiter.h"
+#include "coros/awaiter/read_awaiter.h"
+#include "coros/awaiter/skip_awaiter.h"
+#include "coros/awaiter/write_awaiter.h"
 
 #include <cstdint>
 #include <iostream>

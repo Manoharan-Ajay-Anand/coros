@@ -1,5 +1,5 @@
-#ifndef COROS_ASYNC_WRITE_AWAITER_H
-#define COROS_ASYNC_WRITE_AWAITER_H
+#ifndef COROS_AWAITER_WRITE_AWAITER_H
+#define COROS_AWAITER_WRITE_AWAITER_H
 
 #include <cstddef>
 #include <coroutine>
@@ -33,17 +33,6 @@ namespace coros::base {
         const std::byte b;
         std::runtime_error error;
         void write(std::coroutine_handle<> handle);
-        bool await_ready() noexcept;
-        void await_suspend(std::coroutine_handle<> handle);
-        void await_resume();
-    };
-
-    struct SocketFlushAwaiter {
-        SocketStream& stream;
-        SocketEventManager& event_manager;
-        ByteBuffer& buffer;
-        std::runtime_error error;
-        void flush(std::coroutine_handle<> handle);
         bool await_ready() noexcept;
         void await_suspend(std::coroutine_handle<> handle);
         void await_resume();
