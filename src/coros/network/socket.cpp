@@ -18,9 +18,10 @@
 
 coros::base::Socket::Socket(SocketDetails details, SocketEventMonitor& event_monitor, 
                             ThreadPool& thread_pool) 
-        : details(details), event_manager(details.socket_fd, event_monitor, thread_pool), 
+        : details(details), event_manager(event_monitor, thread_pool), 
           stream(details.socket_fd), input_buffer(SOCKET_BUFFER_SIZE), 
           output_buffer(SOCKET_BUFFER_SIZE) {
+    event_manager.register_socket_fd(details.socket_fd);
 }
 
 coros::base::SocketReadAwaiter coros::base::Socket::read(std::byte* dest, long long size) {

@@ -62,7 +62,6 @@ class EchoApplication : public coros::base::ServerApplication {
 
 void start_server(coros::base::Server& server) {
     try {
-        server.setup();
         server.start(true);
         std::getchar();
         server.shutdown();

@@ -1,16 +1,12 @@
 #ifndef COROS_NETWORK_STREAM_H
 #define COROS_NETWORK_STREAM_H
 
+#include "socket_op.h"
+
 #include <atomic>
 
 namespace coros::base {
     class ByteBuffer;
-
-    enum SocketOperation {
-        SOCKET_OP_BLOCK,
-        SOCKET_OP_CLOSE,
-        SOCKET_OP_SUCCESS
-    };
 
     class SocketStream {
         private:

@@ -1,13 +1,23 @@
 #include "manager.h"
 #include "monitor.h"
 
-coros::base::SocketEventManager::SocketEventManager(int socket_fd, 
-                                                     SocketEventMonitor& event_monitor,
-                                                     ThreadPool& thread_pool) 
+#include <iostream>
+#include <stdexcept>
+#include <string>
+
+coros::base::SocketEventManager::SocketEventManager(SocketEventMonitor& event_monitor,
+                                                    ThreadPool& thread_pool) 
         : event_monitor(event_monitor), read_executor(thread_pool), write_executor(thread_pool) {
-    this->socket_fd = socket_fd;
+    this->is_registered = false;
     this->waiting_for_io = false;
     this->marked_for_close = false;
+}
+
+void coros::base::SocketEventManager::register_socket_fd(int socket_fd) {
+    if (is_registered.exchange(true)) {
+        throw std::runtime_error("SocketEventManager register_socket: already registered");
+    }
+    this->socket_fd = socket_fd;
     event_monitor.register_socket(socket_fd, *this);
 }
 
@@ -36,11 +46,17 @@ void coros::base::SocketEventManager::on_socket_event(bool can_read, bool can_wr
 }
 
 void coros::base::SocketEventManager::set_read_handler(std::function<void()> handler) {
+    if (!is_registered) {
+        throw std::runtime_error("SocketEventManager set_read_handler: not registered");
+    }
     read_executor.set_handler(handler);
     listen_for_io();
 }
 
 void coros::base::SocketEventManager::set_write_handler(std::function<void()> handler) {
+    if (!is_registered) {
+        throw std::runtime_error("SocketEventManager set_write_handler: not registered");
+    }
     write_executor.set_handler(handler);
     listen_for_io();
 }

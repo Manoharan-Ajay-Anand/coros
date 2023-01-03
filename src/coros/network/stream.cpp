@@ -1,8 +1,10 @@
 #include "stream.h"
+#include "socket_op.h"
 #include "coros/memory/buffer.h"
 
 #include <cerrno>
 #include <cstring>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <sys/socket.h>

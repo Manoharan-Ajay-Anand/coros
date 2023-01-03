@@ -10,6 +10,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcoroutines")
 
 add_library(coros STATIC
     src/coros/async/thread_pool.cpp
+    src/coros/awaiter/accept_awaiter.cpp
     src/coros/awaiter/flush_awaiter.cpp
     src/coros/awaiter/read_awaiter.cpp
     src/coros/awaiter/skip_awaiter.cpp
@@ -20,7 +21,9 @@ add_library(coros STATIC
     src/coros/memory/buffer.cpp
     src/coros/network/server.cpp
     src/coros/network/socket.cpp
+    src/coros/network/server_socket.cpp
     src/coros/network/stream.cpp
+    src/coros/network/util.cpp
     src/coros/app.cpp)
 
 find_package(Threads REQUIRED)
