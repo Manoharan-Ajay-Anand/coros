@@ -7,6 +7,12 @@
 #include <iostream>
 #include <stdexcept>
 
+coros::base::SocketFlushAwaiter::SocketFlushAwaiter(SocketStream& stream, 
+                                                    SocketEventManager& event_manager,
+                                                    ByteBuffer& buffer)
+        : stream(stream), event_manager(event_manager), buffer(buffer) {
+}
+
 void coros::base::SocketFlushAwaiter::flush(std::coroutine_handle<> handle) {
     try {
         SocketOperation status = stream.send_to_socket(buffer);
@@ -19,7 +25,7 @@ void coros::base::SocketFlushAwaiter::flush(std::coroutine_handle<> handle) {
             throw std::runtime_error("Socket has been closed");
         }
     } catch (std::runtime_error error) {
-        this->error = error;
+        error_optional = error;
     }
     handle.resume();
 }
@@ -33,7 +39,7 @@ void coros::base::SocketFlushAwaiter::await_suspend(std::coroutine_handle<> hand
 }
 
 void coros::base::SocketFlushAwaiter::await_resume() {
-    if (buffer.get_total_remaining() > 0) {
-        throw error;
+    if (error_optional) {
+        throw error_optional.value();
     }
 }

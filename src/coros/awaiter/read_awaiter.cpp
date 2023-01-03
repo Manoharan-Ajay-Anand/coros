@@ -6,8 +6,16 @@
 #include <algorithm>
 #include <coroutine>
 #include <iostream>
+#include <optional>
 #include <stdexcept>
 #include <cstddef>
+
+coros::base::SocketReadAwaiter::SocketReadAwaiter(SocketStream& stream, 
+                                                  SocketEventManager& event_manager,
+                                                  ByteBuffer& buffer, 
+                                                  std::byte* dest, long long size) 
+        : stream(stream), event_manager(event_manager), buffer(buffer), dest(dest), size(size) {
+}
 
 void coros::base::SocketReadAwaiter::read(std::coroutine_handle<> handle) {
     try {
@@ -24,7 +32,7 @@ void coros::base::SocketReadAwaiter::read(std::coroutine_handle<> handle) {
             }
         }
     } catch (std::runtime_error error) {
-        this->error = error;
+        error_optional = error;
     }
     handle.resume();
 }
@@ -46,9 +54,15 @@ void coros::base::SocketReadAwaiter::await_suspend(std::coroutine_handle<> handl
 }
 
 void coros::base::SocketReadAwaiter::await_resume() {
-    if (size > 0) {
-        throw error;
+    if (error_optional) {
+        throw error_optional.value();
     }
+}
+
+coros::base::SocketReadByteAwaiter::SocketReadByteAwaiter(SocketStream& stream, 
+                                                          SocketEventManager& event_manager,
+                                                          ByteBuffer& buffer) 
+        : stream(stream), event_manager(event_manager), buffer(buffer) {
 }
 
 void coros::base::SocketReadByteAwaiter::read(std::coroutine_handle<> handle) {
@@ -63,7 +77,7 @@ void coros::base::SocketReadByteAwaiter::read(std::coroutine_handle<> handle) {
             throw std::runtime_error("Socket has been closed");
         }
     } catch (std::runtime_error error) {
-        this->error = error;
+        error_optional = error;
     }
     handle.resume();
 }
@@ -77,8 +91,8 @@ void coros::base::SocketReadByteAwaiter::await_suspend(std::coroutine_handle<> h
 }
 
 std::byte coros::base::SocketReadByteAwaiter::await_resume() {
-    if (buffer.get_total_remaining() == 0) {
-        throw error;
+    if (error_optional) {
+        throw error_optional.value();
     }
     return buffer.read_b();
 }

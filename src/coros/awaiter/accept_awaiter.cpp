@@ -18,8 +18,8 @@ coros::base::SocketAcceptAwaiter::SocketAcceptAwaiter(int server_fd, ThreadPool&
                                                       SocketEventMonitor& monitor)
                                                       : thread_pool(thread_pool), 
                                                         event_manager(event_manager), 
-                                                        event_monitor(monitor) {
-    this->server_fd = server_fd;
+                                                        event_monitor(monitor),
+                                                        server_fd(server_fd) {
 }
 
 coros::base::SocketOperation coros::base::SocketAcceptAwaiter::attempt_accept() {
@@ -33,8 +33,8 @@ coros::base::SocketOperation coros::base::SocketAcceptAwaiter::attempt_accept() 
         }
         set_non_blocking_socket(details.socket_fd);
         return SOCKET_OP_SUCCESS;
-    } catch (std::runtime_error e) {
-        error = e;
+    } catch (std::runtime_error error) {
+        error_optional = error;
         return SOCKET_OP_ERROR;
     }
 }
@@ -61,8 +61,8 @@ void coros::base::SocketAcceptAwaiter::await_suspend(std::coroutine_handle<> han
 }
 
 std::shared_ptr<coros::base::Socket> coros::base::SocketAcceptAwaiter::await_resume() {
-    if (error) {
-        throw error.value();
+    if (error_optional) {
+        throw error_optional.value();
     }
     return std::make_shared<Socket>(details, event_monitor, thread_pool);
 }

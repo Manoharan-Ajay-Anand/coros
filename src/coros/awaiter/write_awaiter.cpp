@@ -6,7 +6,15 @@
 #include <algorithm>
 #include <coroutine>
 #include <iostream>
+#include <optional>
 #include <stdexcept>
+
+coros::base::SocketWriteAwaiter::SocketWriteAwaiter(SocketStream& stream, 
+                                                    SocketEventManager& event_manager,
+                                                    ByteBuffer& buffer, 
+                                                    std::byte* src, long long size) 
+        : stream(stream), event_manager(event_manager), buffer(buffer), src(src), size(size) {
+}
 
 void coros::base::SocketWriteAwaiter::write(std::coroutine_handle<> handle) {
     try {
@@ -23,7 +31,7 @@ void coros::base::SocketWriteAwaiter::write(std::coroutine_handle<> handle) {
             }
         }
     } catch (std::runtime_error error) {
-        this->error = error;
+        error_optional = error;
     }
     handle.resume();
 }
@@ -45,9 +53,15 @@ void coros::base::SocketWriteAwaiter::await_suspend(std::coroutine_handle<> hand
 }
 
 void coros::base::SocketWriteAwaiter::await_resume() {
-    if (size > 0) {
-        throw error;
+    if (error_optional) {
+        throw error_optional.value();
     }
+}
+
+coros::base::SocketWriteByteAwaiter::SocketWriteByteAwaiter(SocketStream& stream, 
+                                                            SocketEventManager& event_manager, 
+                                                            ByteBuffer& buffer, std::byte b)
+        : stream(stream), event_manager(event_manager), buffer(buffer), b(b) {
 }
 
 void coros::base::SocketWriteByteAwaiter::write(std::coroutine_handle<> handle) {
@@ -62,7 +76,7 @@ void coros::base::SocketWriteByteAwaiter::write(std::coroutine_handle<> handle) 
             throw std::runtime_error("Socket has been closed");
         }
     } catch (std::runtime_error error) {
-        this->error = error;
+        error_optional = error;
     }
     handle.resume();
 }
@@ -76,8 +90,8 @@ void coros::base::SocketWriteByteAwaiter::await_suspend(std::coroutine_handle<> 
 }
 
 void coros::base::SocketWriteByteAwaiter::await_resume() {
-    if (buffer.get_total_capacity() == 0) {
-        throw error;
+    if (error_optional) {
+        throw error_optional.value();
     }
     buffer.write_b(b);
 }

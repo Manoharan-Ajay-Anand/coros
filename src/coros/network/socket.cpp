@@ -25,27 +25,27 @@ coros::base::Socket::Socket(SocketDetails details, SocketEventMonitor& event_mon
 }
 
 coros::base::SocketReadAwaiter coros::base::Socket::read(std::byte* dest, long long size) {
-    return { stream, event_manager, input_buffer, dest, size, std::runtime_error("") };
+    return { stream, event_manager, input_buffer, dest, size };
 }
 
 coros::base::SocketReadByteAwaiter coros::base::Socket::read_b() {
-    return { stream, event_manager, input_buffer, std::runtime_error("") };
+    return { stream, event_manager, input_buffer };
 }
 
 coros::base::SocketSkipAwaiter coros::base::Socket::skip(long long size) {
-    return { stream, event_manager, input_buffer, size, std::runtime_error("") };
+    return { stream, event_manager, input_buffer, size };
 }
 
 coros::base::SocketWriteAwaiter coros::base::Socket::write(std::byte* src, long long size) {
-    return { stream, event_manager, output_buffer, src, size, std::runtime_error("") };
+    return { stream, event_manager, output_buffer, src, size };
 }
 
 coros::base::SocketWriteByteAwaiter coros::base::Socket::write_b(const std::byte b) {
-    return { stream, event_manager, output_buffer, b, std::runtime_error("") };
+    return { stream, event_manager, output_buffer, b };
 }
 
 coros::base::SocketFlushAwaiter coros::base::Socket::flush() {
-    return { stream, event_manager, output_buffer, std::runtime_error("") };
+    return { stream, event_manager, output_buffer };
 }
 
 int coros::base::Socket::get_fd() {

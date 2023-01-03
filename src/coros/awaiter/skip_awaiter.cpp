@@ -6,7 +6,14 @@
 #include <algorithm>
 #include <cstddef>
 #include <coroutine>
+#include <optional>
 #include <stdexcept>
+
+coros::base::SocketSkipAwaiter::SocketSkipAwaiter(SocketStream& stream, 
+                                                  SocketEventManager& event_manager,
+                                                  ByteBuffer& buffer, long long size)
+        : stream(stream), event_manager(event_manager), buffer(buffer), size(size) {
+}
 
 void coros::base::SocketSkipAwaiter::skip(std::coroutine_handle<> handle) {
     try {
@@ -23,7 +30,7 @@ void coros::base::SocketSkipAwaiter::skip(std::coroutine_handle<> handle) {
             }
         }
     } catch (std::runtime_error error) {
-        this->error = error;
+        error_optional = error;
     }
     handle.resume();
 }
@@ -44,7 +51,7 @@ void coros::base::SocketSkipAwaiter::await_suspend(std::coroutine_handle<> handl
 }
 
 void coros::base::SocketSkipAwaiter::await_resume() {
-    if (size > 0) {
-        throw error;
+    if (error_optional) {
+        throw error_optional.value();
     }
 }

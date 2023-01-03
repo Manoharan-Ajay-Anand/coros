@@ -18,11 +18,11 @@ namespace coros::base {
     class SocketEventMonitor;
 
     struct SocketAcceptAwaiter {
-        int server_fd;
+        const int server_fd;
         ThreadPool& thread_pool;
         SocketEventManager& event_manager;
         SocketEventMonitor& event_monitor;
-        std::optional<std::runtime_error> error;
+        std::optional<std::runtime_error> error_optional;
         SocketDetails details;
         SocketAcceptAwaiter(int server_fd, ThreadPool& thread_pool, 
                             SocketEventManager& event_manager, SocketEventMonitor& monitor);

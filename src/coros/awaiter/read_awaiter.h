@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <coroutine>
+#include <optional>
 #include <stdexcept>
 
 namespace coros::base {
@@ -18,7 +19,9 @@ namespace coros::base {
         ByteBuffer& buffer;
         std::byte* dest;
         long long size;
-        std::runtime_error error;
+        std::optional<std::runtime_error> error_optional;
+        SocketReadAwaiter(SocketStream& stream, SocketEventManager& event_manager,
+                          ByteBuffer& buffer, std::byte* dest, long long size);
         void read(std::coroutine_handle<> handle);
         void read_available();
         bool await_ready() noexcept;
@@ -30,7 +33,9 @@ namespace coros::base {
         SocketStream& stream;
         SocketEventManager& event_manager;
         ByteBuffer& buffer;
-        std::runtime_error error;
+        std::optional<std::runtime_error> error_optional;
+        SocketReadByteAwaiter(SocketStream& stream, SocketEventManager& event_manager,
+                              ByteBuffer& buffer);
         void read(std::coroutine_handle<> handle);
         bool await_ready() noexcept;
         void await_suspend(std::coroutine_handle<> handle);
