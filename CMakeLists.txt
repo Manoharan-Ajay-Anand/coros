@@ -1,13 +1,3 @@
-cmake_minimum_required(VERSION 3.1)
-
-project(Coros
-    VERSION 1.0
-    DESCRIPTION "Server based on C++ 20 coroutines"
-    LANGUAGES CXX)
-
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcoroutines")
-
 add_library(coros STATIC
     src/coros/async/thread_pool.cpp
     src/coros/awaiter/accept_awaiter.cpp
@@ -29,6 +19,3 @@ add_library(coros STATIC
 find_package(Threads REQUIRED)
 target_include_directories(coros PUBLIC src)
 target_link_libraries(coros PRIVATE Threads::Threads)
-
-add_executable(echo EXCLUDE_FROM_ALL examples/echo.cpp)
-target_link_libraries(echo PRIVATE coros)
