@@ -30,6 +30,7 @@ namespace coros::base {
             SocketStream stream;
             ByteBuffer input_buffer;
             ByteBuffer output_buffer;
+            std::atomic_bool is_closed;
         public:
             Socket(SocketDetails details, SocketEventMonitor& event_monitor, 
                    ThreadPool& thread_pool);

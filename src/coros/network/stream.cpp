@@ -43,10 +43,6 @@ coros::base::SocketOperation coros::base::SocketStream::send_to_socket(ByteBuffe
     while (buffer.get_total_remaining() > 0) {
         coros::base::IOChunk chunk = buffer.get_read_chunk();
         int size_written = send(socket_fd, chunk.data, chunk.size, 0);
-        if (size_written == 0) {
-            this->close();
-            return SOCKET_OP_CLOSE;
-        }
         if (size_written < 0) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
                 return SOCKET_OP_BLOCK;

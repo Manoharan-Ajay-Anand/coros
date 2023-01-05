@@ -7,12 +7,10 @@
 #include "coros/awaiter/skip_awaiter.h"
 #include "coros/awaiter/write_awaiter.h"
 
-#include <cstdint>
-#include <iostream>
-#include <string>
+#include <atomic>
+#include <cstddef>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <stdexcept>
 
 #define SOCKET_BUFFER_SIZE 8192
 
@@ -21,6 +19,7 @@ coros::base::Socket::Socket(SocketDetails details, SocketEventMonitor& event_mon
         : details(details), event_manager(event_monitor, thread_pool), 
           stream(details.socket_fd), input_buffer(SOCKET_BUFFER_SIZE), 
           output_buffer(SOCKET_BUFFER_SIZE) {
+    is_closed = false;
     event_manager.register_socket_fd(details.socket_fd);
 }
 
@@ -53,6 +52,9 @@ int coros::base::Socket::get_fd() {
 }
 
 void coros::base::Socket::close_socket() {
+    if (is_closed.exchange(true)) {
+        return;
+    }
     stream.close();
     event_manager.close();
     close(details.socket_fd);
