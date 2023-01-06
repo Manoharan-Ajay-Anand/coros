@@ -27,7 +27,7 @@ void coros::base::SocketWriteAwaiter::write(std::coroutine_handle<> handle) {
                 });
             }
             if (status == SOCKET_OP_CLOSE && size > 0) {
-                throw std::runtime_error("Socket has been closed");
+                throw std::runtime_error("Socket write(): Socket has been closed");
             }
         }
     } catch (std::runtime_error error) {
@@ -56,42 +56,4 @@ void coros::base::SocketWriteAwaiter::await_resume() {
     if (error_optional) {
         throw error_optional.value();
     }
-}
-
-coros::base::SocketWriteByteAwaiter::SocketWriteByteAwaiter(SocketStream& stream, 
-                                                            SocketEventManager& event_manager, 
-                                                            ByteBuffer& buffer, std::byte b)
-        : stream(stream), event_manager(event_manager), buffer(buffer), b(b) {
-}
-
-void coros::base::SocketWriteByteAwaiter::write(std::coroutine_handle<> handle) {
-    try {
-        SocketOperation status = stream.send_to_socket(buffer);
-        if (status == SOCKET_OP_BLOCK && buffer.get_total_capacity() == 0) {
-            return event_manager.set_write_handler([&, handle]() {
-                write(handle);
-            });
-        }
-        if (status == SOCKET_OP_CLOSE && buffer.get_total_capacity() == 0) {
-            throw std::runtime_error("Socket has been closed");
-        }
-    } catch (std::runtime_error error) {
-        error_optional = error;
-    }
-    handle.resume();
-}
-
-bool coros::base::SocketWriteByteAwaiter::await_ready() noexcept {
-    return buffer.get_total_capacity() > 0;
-}
-
-void coros::base::SocketWriteByteAwaiter::await_suspend(std::coroutine_handle<> handle) {
-    write(handle);
-}
-
-void coros::base::SocketWriteByteAwaiter::await_resume() {
-    if (error_optional) {
-        throw error_optional.value();
-    }
-    buffer.write_b(b);
 }

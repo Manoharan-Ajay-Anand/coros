@@ -22,7 +22,7 @@ void coros::base::SocketFlushAwaiter::flush(std::coroutine_handle<> handle) {
             });
         }
         if (status == SOCKET_OP_CLOSE && buffer.get_total_remaining() > 0) {
-            throw std::runtime_error("Socket has been closed");
+            throw std::runtime_error("Socket flush(): Socket has been closed");
         }
     } catch (std::runtime_error error) {
         error_optional = error;

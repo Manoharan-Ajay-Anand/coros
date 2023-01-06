@@ -17,15 +17,17 @@ namespace coros::base {
         SocketStream& stream;
         SocketEventManager& event_manager;
         ByteBuffer& buffer;
-        long long size;
+        const long long size;
+        long long total_size_skipped;
+        const bool skip_fully;
         std::optional<std::runtime_error> error_optional;
         SocketSkipAwaiter(SocketStream& stream, SocketEventManager& event_manager,
-                          ByteBuffer& buffer, long long size);
+                          ByteBuffer& buffer, long long size, bool skip_fully);
         void skip(std::coroutine_handle<> handle);
         void skip_available();
         bool await_ready() noexcept;
         void await_suspend(std::coroutine_handle<> handle);
-        void await_resume();
+        long long await_resume();
     };
 }
 #endif

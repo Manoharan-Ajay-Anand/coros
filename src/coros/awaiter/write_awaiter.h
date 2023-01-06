@@ -28,20 +28,6 @@ namespace coros::base {
         void await_suspend(std::coroutine_handle<> handle);
         void await_resume();
     };
-
-    struct SocketWriteByteAwaiter {
-        SocketStream& stream;
-        SocketEventManager& event_manager;
-        ByteBuffer& buffer;
-        const std::byte b;
-        std::optional<std::runtime_error> error_optional;
-        SocketWriteByteAwaiter(SocketStream& stream, SocketEventManager& event_manager, 
-                               ByteBuffer& buffer, std::byte b);
-        void write(std::coroutine_handle<> handle);
-        bool await_ready() noexcept;
-        void await_suspend(std::coroutine_handle<> handle);
-        void await_resume();
-    };
 }
 
 #endif

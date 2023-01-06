@@ -34,11 +34,9 @@ namespace coros::base {
         public:
             Socket(SocketDetails details, SocketEventMonitor& event_monitor, 
                    ThreadPool& thread_pool);
-            SocketReadAwaiter read(std::byte* dest, long long size);
-            SocketReadByteAwaiter read_b();
-            SocketSkipAwaiter skip(long long size);
+            SocketReadAwaiter read(std::byte* dest, long long size, bool read_fully);
+            SocketSkipAwaiter skip(long long size, bool skip_fully);
             SocketWriteAwaiter write(std::byte* src, long long size);
-            SocketWriteByteAwaiter write_b(const std::byte b);
             SocketFlushAwaiter flush();
             int get_fd();
             void close_socket();

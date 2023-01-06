@@ -23,24 +23,17 @@ coros::base::Socket::Socket(SocketDetails details, SocketEventMonitor& event_mon
     event_manager.register_socket_fd(details.socket_fd);
 }
 
-coros::base::SocketReadAwaiter coros::base::Socket::read(std::byte* dest, long long size) {
-    return { stream, event_manager, input_buffer, dest, size };
+coros::base::SocketReadAwaiter coros::base::Socket::read(std::byte* dest, long long size, 
+                                                         bool read_fully) {
+    return { stream, event_manager, input_buffer, dest, size, read_fully };
 }
 
-coros::base::SocketReadByteAwaiter coros::base::Socket::read_b() {
-    return { stream, event_manager, input_buffer };
-}
-
-coros::base::SocketSkipAwaiter coros::base::Socket::skip(long long size) {
-    return { stream, event_manager, input_buffer, size };
+coros::base::SocketSkipAwaiter coros::base::Socket::skip(long long size, bool skip_fully) {
+    return { stream, event_manager, input_buffer, size, skip_fully };
 }
 
 coros::base::SocketWriteAwaiter coros::base::Socket::write(std::byte* src, long long size) {
     return { stream, event_manager, output_buffer, src, size };
-}
-
-coros::base::SocketWriteByteAwaiter coros::base::Socket::write_b(const std::byte b) {
-    return { stream, event_manager, output_buffer, b };
 }
 
 coros::base::SocketFlushAwaiter coros::base::Socket::flush() {
