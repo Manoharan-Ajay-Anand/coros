@@ -8,7 +8,6 @@ coros::base::EventHandlerExecutor::EventHandlerExecutor(coros::base::ThreadPool&
 }
 
 void coros::base::EventHandlerExecutor::on_event() {
-    std::lock_guard<std::mutex> guard(handler_mutex);
     if (handler_optional) {
         thread_pool.run(handler_optional.value());
         handler_optional.reset();
@@ -16,7 +15,6 @@ void coros::base::EventHandlerExecutor::on_event() {
 }
 
 void coros::base::EventHandlerExecutor::set_handler(std::function<void()> handler) {
-    std::lock_guard<std::mutex> guard(handler_mutex);
     if (handler_optional) {
         throw std::runtime_error("EventHandlerExecutor set_handler error: Handler already set");
     }

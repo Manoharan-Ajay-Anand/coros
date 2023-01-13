@@ -47,7 +47,7 @@ void coros::base::Server::shutdown() {
     if (marked_for_close.exchange(true)) {
         throw std::runtime_error(std::string("Server shutdown(): Server already shutdown"));
     }
-    event_monitor.shutdown();
     server_app.shutdown();
+    event_monitor.shutdown();
     thread_pool.shutdown();
 }

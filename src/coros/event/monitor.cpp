@@ -70,6 +70,9 @@ void coros::base::SocketEventMonitor::start() {
     while (!is_shutdown) {
         int count = epoll_wait(epoll_fd, events.data(), POLL_MAX_EVENTS, POLL_TIMEOUT);
         if (count < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
             throw std::runtime_error(std::string("SocketEventMonitor start: ").append(strerror(errno)));
         }
         trigger_events(events, count);

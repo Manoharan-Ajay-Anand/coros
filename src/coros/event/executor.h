@@ -1,7 +1,6 @@
 #ifndef COROS_EVENT_EXECUTOR_H
 #define COROS_EVENT_EXECUTOR_H
 
-#include <mutex>
 #include <functional>
 #include <optional>
 
@@ -10,7 +9,6 @@ namespace coros::base {
 
     class EventHandlerExecutor {
         private:
-            std::mutex handler_mutex;
             std::optional<std::function<void()>> handler_optional;
             ThreadPool& thread_pool;
         public:

@@ -4,9 +4,8 @@
 #include "handler.h"
 #include "executor.h"
 
-#include <mutex>
 #include <functional>
-#include <atomic>
+#include <mutex>
 
 namespace coros::base {
     class ThreadPool;
@@ -17,9 +16,10 @@ namespace coros::base {
         private:
             int socket_fd;
             SocketEventMonitor& event_monitor;
-            std::atomic_bool is_registered;
-            std::atomic_bool marked_for_close;
-            std::atomic_bool waiting_for_io;
+            std::mutex manager_mutex;
+            bool is_registered;
+            bool marked_for_close;
+            bool waiting_for_io;
             EventHandlerExecutor read_executor;
             EventHandlerExecutor write_executor;
             void listen_for_io();

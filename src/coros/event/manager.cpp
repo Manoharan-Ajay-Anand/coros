@@ -2,6 +2,7 @@
 #include "monitor.h"
 
 #include <iostream>
+#include <mutex>
 #include <stdexcept>
 #include <string>
 
@@ -14,20 +15,24 @@ coros::base::SocketEventManager::SocketEventManager(SocketEventMonitor& event_mo
 }
 
 void coros::base::SocketEventManager::register_socket_fd(int socket_fd) {
-    if (is_registered.exchange(true)) {
+    std::lock_guard<std::mutex> guard(manager_mutex);
+    if (is_registered) {
         throw std::runtime_error("SocketEventManager register_socket: already registered");
     }
     this->socket_fd = socket_fd;
     event_monitor.register_socket(socket_fd, *this);
+    is_registered = true;
 }
 
 void coros::base::SocketEventManager::listen_for_io() {
-    if (!waiting_for_io.exchange(true)) {
+    if (!waiting_for_io) {
         event_monitor.listen_for_io(socket_fd);
+        waiting_for_io = true;
     }
 }
 
 void coros::base::SocketEventManager::on_socket_event(bool can_read, bool can_write) {
+    std::lock_guard<std::mutex> guard(manager_mutex);
     if (marked_for_close) {
         return;
     }
@@ -46,6 +51,7 @@ void coros::base::SocketEventManager::on_socket_event(bool can_read, bool can_wr
 }
 
 void coros::base::SocketEventManager::set_read_handler(std::function<void()> handler) {
+    std::lock_guard<std::mutex> guard(manager_mutex);
     if (!is_registered) {
         throw std::runtime_error("SocketEventManager set_read_handler: not registered");
     }
@@ -54,6 +60,7 @@ void coros::base::SocketEventManager::set_read_handler(std::function<void()> han
 }
 
 void coros::base::SocketEventManager::set_write_handler(std::function<void()> handler) {
+    std::lock_guard<std::mutex> guard(manager_mutex);
     if (!is_registered) {
         throw std::runtime_error("SocketEventManager set_write_handler: not registered");
     }
@@ -62,10 +69,12 @@ void coros::base::SocketEventManager::set_write_handler(std::function<void()> ha
 }
 
 void coros::base::SocketEventManager::close() {
-    if (marked_for_close.exchange(true)) {
+    std::lock_guard<std::mutex> guard(manager_mutex);
+    if (marked_for_close) {
         return;
     }
     event_monitor.deregister_socket(socket_fd);
     read_executor.on_event();
     write_executor.on_event();
+    marked_for_close = true;
 }
