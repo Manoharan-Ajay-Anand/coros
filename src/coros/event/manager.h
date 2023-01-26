@@ -4,6 +4,7 @@
 #include "handler.h"
 #include "executor.h"
 
+#include <atomic>
 #include <functional>
 #include <mutex>
 
@@ -19,7 +20,7 @@ namespace coros::base {
             std::mutex manager_mutex;
             bool is_registered;
             bool marked_for_close;
-            bool waiting_for_io;
+            std::atomic_bool waiting_for_io;
             EventHandlerExecutor read_executor;
             EventHandlerExecutor write_executor;
             void listen_for_io();
