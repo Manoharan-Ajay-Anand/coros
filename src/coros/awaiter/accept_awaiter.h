@@ -8,7 +8,6 @@
 #include <memory>
 #include <optional>
 #include <stdexcept>
-#include <exception>
 
 namespace coros::base {
     class ThreadPool;
@@ -26,7 +25,6 @@ namespace coros::base {
         SocketDetails details;
         SocketAcceptAwaiter(int server_fd, ThreadPool& thread_pool, 
                             SocketEventManager& event_manager, SocketEventMonitor& monitor);
-        SocketOperation attempt_accept();
         void accept_socket(std::coroutine_handle<> handle);
         bool await_ready() noexcept;
         void await_suspend(std::coroutine_handle<> handle);
