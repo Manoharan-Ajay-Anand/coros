@@ -26,7 +26,9 @@ addrinfo* get_local_addr_info(short port) {
     return res;
 }
 
-coros::base::ServerSocket::ServerSocket(short port, IoEventMonitor& io_monitor): io_monitor(io_monitor) {
+coros::base::ServerSocket::ServerSocket(short port,
+                                        IoEventMonitor& io_monitor): io_monitor(io_monitor),
+                                                                     is_closed(false) {
     addrinfo* info = get_local_addr_info(port); 
     socket_fd = socket(info->ai_family, info->ai_socktype, info->ai_protocol);
     throw_errno(socket_fd, "ServerSocket socket(): ");
@@ -62,6 +64,9 @@ coros::base::AwaitableValue<std::shared_ptr<coros::base::Socket>>
 }
 
 void coros::base::ServerSocket::close_socket() {
+    if (is_closed.exchange(true)) {
+        return;
+    }
     io_monitor.remove_fd(socket_fd);
     close(socket_fd);
 }

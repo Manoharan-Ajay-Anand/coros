@@ -3,6 +3,7 @@
 
 #include "coros/async/future.h"
 
+#include <atomic>
 #include <memory>
 
 namespace coros::base {
@@ -17,6 +18,7 @@ namespace coros::base {
             int socket_fd;
             IoEventMonitor& io_monitor;
             IoEventListener* io_listener;
+            std::atomic_bool is_closed;
         public:
             ServerSocket(short port, IoEventMonitor& io_monitor);
             AwaitableValue<std::shared_ptr<Socket>> accept_conn();

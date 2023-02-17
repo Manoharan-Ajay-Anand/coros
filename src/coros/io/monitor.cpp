@@ -36,6 +36,7 @@ void coros::base::IoEventMonitor::shutdown() {
     if (is_shutdown.exchange(true)) {
         throw std::runtime_error("IoEventMonitor shutdown() error: already shutdown");
     }
+    fd_listener_map.clear();
     close(epoll_fd);
 }
 
