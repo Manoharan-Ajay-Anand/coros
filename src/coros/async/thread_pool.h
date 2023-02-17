@@ -7,6 +7,7 @@
 #include <functional>
 #include <mutex>
 #include <condition_variable>
+#include <coroutine>
 
 namespace coros::base {
     class ThreadPool {
@@ -23,6 +24,7 @@ namespace coros::base {
             ThreadPool(int max_threads);
             void shutdown();
             void run(std::function<void()> job);
+            void run(std::coroutine_handle<> handle);
     };
 }
 

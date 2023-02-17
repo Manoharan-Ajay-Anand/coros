@@ -5,6 +5,7 @@
 #include <functional>
 #include <stdexcept>
 #include <mutex>
+#include <coroutine>
 
 coros::base::ThreadPool::ThreadPool() : max_threads(std::thread::hardware_concurrency()) {
     is_shutdown = false;
@@ -46,6 +47,12 @@ void coros::base::ThreadPool::run(std::function<void()> job) {
         }
     }
     jobs_condition.notify_one();
+}
+
+void coros::base::ThreadPool::run(std::coroutine_handle<> handle) {
+    run([&, handle]() {
+        handle.resume();
+    });
 }
 
 void coros::base::ThreadPool::shutdown() {
