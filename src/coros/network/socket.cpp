@@ -123,6 +123,7 @@ void coros::base::Socket::close_socket() {
         return;
     }
     stream.close();
+    io_listener->close();
     io_monitor.remove_fd(details.socket_fd);
     close(details.socket_fd);
 }

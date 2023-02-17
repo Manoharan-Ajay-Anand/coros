@@ -4,6 +4,7 @@
 #include "read_awaiter.h"
 #include "write_awaiter.h"
 
+#include <atomic>
 #include <coroutine>
 #include <optional>
 #include <mutex>
@@ -18,6 +19,7 @@ namespace coros::base {
             ThreadPool& thread_pool;
             int epoll_fd;
             int io_fd;
+            std::atomic_bool marked_for_close;
             std::mutex listener_mutex;
             bool listening_read;
             bool listening_write;
@@ -33,6 +35,7 @@ namespace coros::base {
             void set_write_handle(std::coroutine_handle<> write_handle);
             IoReadAwaiter await_read();
             IoWriteAwaiter await_write();
+            void close();
     };
 }
 

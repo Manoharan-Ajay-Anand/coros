@@ -11,6 +11,7 @@ coros::base::IoEventListener::IoEventListener(ThreadPool& thread_pool,
                                               int epoll_fd,
                                               int io_fd): thread_pool(thread_pool),
                                                           epoll_fd(epoll_fd),
+                                                          marked_for_close(false),
                                                           listening_read(false),
                                                           listening_write(false),
                                                           io_fd(io_fd) {
@@ -66,6 +67,9 @@ bool coros::base::IoEventListener::run_handle(std::optional<std::coroutine_handl
 }
 
 void coros::base::IoEventListener::on_event(bool can_read, bool can_write) {
+    if (marked_for_close) {
+        return;
+    }
     std::lock_guard<std::mutex> guard(listener_mutex);
     listening_read = false;
     listening_write = false;
@@ -92,4 +96,19 @@ coros::base::IoReadAwaiter coros::base::IoEventListener::await_read() {
 
 coros::base::IoWriteAwaiter coros::base::IoEventListener::await_write() {
     return { *this };
+}
+
+void coros::base::IoEventListener::close() {
+    if (marked_for_close.exchange(true)) {
+        return;
+    }
+    std::lock_guard<std::mutex> guard(listener_mutex);
+    if (read_handle_opt) {
+        thread_pool.run(read_handle_opt.value());
+        read_handle_opt.reset();
+    }
+    if (write_handle_opt) {
+        thread_pool.run(write_handle_opt.value());
+        write_handle_opt.reset();
+    }
 }
