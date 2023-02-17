@@ -1,21 +1,19 @@
 #ifndef COROS_SOCKET_H
 #define COROS_SOCKET_H
 
-#include "coros/event/monitor.h"
-#include "coros/event/manager.h"
-#include "coros/awaiter/flush_awaiter.h"
-#include "coros/awaiter/read_awaiter.h"
-#include "coros/awaiter/skip_awaiter.h"
-#include "coros/awaiter/write_awaiter.h"
+#include "coros/async/future.h"
 #include "coros/memory/buffer.h"
 #include "stream.h"
+#include "socket_op.h"
 
 #include <atomic>
 #include <cstddef>
 #include <sys/socket.h>
 
 namespace coros::base {
-    class ThreadPool;
+    class IoEventMonitor;
+
+    class IoEventListener;
 
     struct SocketDetails {
         int socket_fd;
@@ -26,18 +24,21 @@ namespace coros::base {
     class Socket {
         private:
             SocketDetails details;
-            SocketEventManager event_manager;
+            IoEventMonitor& io_monitor;
+            IoEventListener* io_listener;
             SocketStream stream;
             ByteBuffer input_buffer;
             ByteBuffer output_buffer;
             std::atomic_bool is_closed;
+            void read_available(std::byte*& dest, long long& size);
+            void skip_available(long long& size);
+            void write_available(std::byte*& src, long long& size);
         public:
-            Socket(SocketDetails details, SocketEventMonitor& event_monitor, 
-                   ThreadPool& thread_pool);
-            SocketReadAwaiter read(std::byte* dest, long long size, bool read_fully);
-            SocketSkipAwaiter skip(long long size, bool skip_fully);
-            SocketWriteAwaiter write(std::byte* src, long long size);
-            SocketFlushAwaiter flush();
+            Socket(SocketDetails details, IoEventMonitor& io_monitor);
+            AwaitableValue<bool> read(std::byte* dest, long long size, bool read_fully);
+            AwaitableValue<bool> skip(long long size, bool skip_fully);
+            AwaitableFuture write(std::byte* src, long long size);
+            AwaitableFuture flush();
             int get_fd();
             void close_socket();
     };

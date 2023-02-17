@@ -1,12 +1,10 @@
 #include "stream.h"
 #include "socket_op.h"
-#include "coros/memory/buffer.h"
 
-#include <cerrno>
-#include <cstring>
+#include "coros/memory/buffer.h"
+#include "coros/commons/error.h"
+
 #include <iostream>
-#include <stdexcept>
-#include <string>
 #include <sys/socket.h>
 
 coros::base::SocketStream::SocketStream(int socket_fd) {
@@ -29,7 +27,7 @@ coros::base::SocketOperation coros::base::SocketStream::recv_from_socket(ByteBuf
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
                 return SOCKET_OP_BLOCK;
             }
-            throw std::runtime_error(std::string("Network recv(): ").append(strerror(errno)));
+            throw_errno(size_read, "SocketStream recv(): ");
         }
         buffer.increment_write_pointer(size_read);
     }
@@ -47,7 +45,7 @@ coros::base::SocketOperation coros::base::SocketStream::send_to_socket(ByteBuffe
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
                 return SOCKET_OP_BLOCK;
             }
-            throw std::runtime_error(std::string("Network send(): ").append(strerror(errno)));
+            throw_errno(size_written, "SocketStream send(): ");
         }
         buffer.increment_read_pointer(size_written);
     }

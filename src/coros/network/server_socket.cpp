@@ -1,14 +1,17 @@
 #include "server_socket.h"
 #include "util.h"
+#include "socket.h"
 
-#include "coros/awaiter/accept_awaiter.h"
-#include "coros/event/manager.h"
+#include "coros/io/monitor.h"
+#include "coros/io/listener.h"
+#include "coros/commons/error.h"
 
-#include <iostream>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <unistd.h>
+
+#include <memory>
 
 addrinfo* get_local_addr_info(short port) {
     std::string service = std::to_string(port);
@@ -19,34 +22,46 @@ addrinfo* get_local_addr_info(short port) {
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
     status = getaddrinfo(NULL, service.c_str(), &hints, &res);
-    coros::base::throw_socket_error(status, "get_addr_info: ");
+    coros::base::throw_errno(status, "get_addr_info: ");
     return res;
 }
 
-coros::base::ServerSocket::ServerSocket(short port, ThreadPool& thread_pool, 
-                                        SocketEventMonitor& event_monitor)
-        : event_manager(event_monitor, thread_pool), thread_pool(thread_pool), 
-          event_monitor(event_monitor) {
+coros::base::ServerSocket::ServerSocket(short port, IoEventMonitor& io_monitor): io_monitor(io_monitor) {
     addrinfo* info = get_local_addr_info(port); 
     socket_fd = socket(info->ai_family, info->ai_socktype, info->ai_protocol);
-    throw_socket_error(socket_fd, "ServerSocket socket(): ");
+    throw_errno(socket_fd, "ServerSocket socket(): ");
     int status = bind(socket_fd, info->ai_addr, info->ai_addrlen);
     freeaddrinfo(info);
-    throw_socket_error(status, "ServerSocket bind(): ");
+    throw_errno(status, "ServerSocket bind(): ");
     int yes = 1;
     status = setsockopt(socket_fd , SOL_SOCKET, SO_REUSEADDR, &yes, sizeof yes);
-    throw_socket_error(status, "ServerSocket setsockopt(): ");
+    throw_errno(status, "ServerSocket setsockopt(): ");
     set_non_blocking_socket(socket_fd);
     status = listen(socket_fd, 10);
-    throw_socket_error(status, "ServerSocket listen(): ");
-    event_manager.register_socket_fd(socket_fd);
+    throw_errno(status, "ServerSocket listen(): ");
+    io_listener = io_monitor.register_fd(socket_fd);
 }
 
-coros::base::SocketAcceptAwaiter coros::base::ServerSocket::accept() {
-    return { socket_fd, thread_pool, event_manager, event_monitor };
+coros::base::AwaitableValue<std::shared_ptr<coros::base::Socket>>
+        coros::base::ServerSocket::accept_conn() {
+    SocketDetails details;
+    while (true) {
+        details.socket_fd = accept(socket_fd,
+                                   reinterpret_cast<sockaddr*>(&details.client_addr),
+                                   &details.addr_size);
+        if (details.socket_fd != -1) {
+            break;
+        }
+        if (errno != EAGAIN && errno != EWOULDBLOCK) {
+            throw_errno(details.socket_fd, "ServerSocket accept() error: ");
+        }
+        co_await io_listener->await_read();
+    }
+    set_non_blocking_socket(details.socket_fd);
+    co_return std::make_shared<Socket>(details, io_monitor);
 }
 
 void coros::base::ServerSocket::close_socket() {
-    event_manager.close();
+    io_monitor.remove_fd(socket_fd);
     close(socket_fd);
 }

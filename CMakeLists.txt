@@ -1,13 +1,10 @@
 add_library(coros STATIC
     src/coros/async/thread_pool.cpp
-    src/coros/awaiter/accept_awaiter.cpp
-    src/coros/awaiter/flush_awaiter.cpp
-    src/coros/awaiter/read_awaiter.cpp
-    src/coros/awaiter/skip_awaiter.cpp
-    src/coros/awaiter/write_awaiter.cpp
-    src/coros/event/executor.cpp
-    src/coros/event/manager.cpp
-    src/coros/event/monitor.cpp
+    src/coros/commons/error.cpp
+    src/coros/io/listener.cpp
+    src/coros/io/monitor.cpp
+    src/coros/io/read_awaiter.cpp
+    src/coros/io/write_awaiter.cpp
     src/coros/memory/buffer.cpp
     src/coros/network/server.cpp
     src/coros/network/socket.cpp
