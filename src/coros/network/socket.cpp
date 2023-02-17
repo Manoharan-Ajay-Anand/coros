@@ -18,21 +18,23 @@ coros::base::Socket::Socket(SocketDetails details, IoEventMonitor& io_monitor)
     io_listener = io_monitor.register_fd(details.socket_fd);
 }
 
-void coros::base::Socket::read_available(std::byte*& dest, long long& size) {
+void coros::base::Socket::read_available(std::byte*& dest, long long& size, long long& total_read) {
     long long buffer_remaining = input_buffer.get_total_remaining();
     long long size_to_read = std::min(size, buffer_remaining);
     input_buffer.read(dest, size_to_read);
     dest += size_to_read;
     size -= size_to_read;
+    total_read += size_to_read;
 }
 
-coros::base::AwaitableValue<bool> coros::base::Socket::read(std::byte* dest, 
-                                                            long long size,
-                                                            bool read_fully) {
-    read_available(dest, size);
+coros::base::AwaitableValue<long long> coros::base::Socket::read(std::byte* dest, 
+                                                                 long long size,
+                                                                 bool read_fully) {
+    long long total_read = 0;
+    read_available(dest, size, total_read);
     while (size > 0) {
         SocketOperation status = stream.recv_from_socket(input_buffer);
-        read_available(dest, size);
+        read_available(dest, size, total_read);
         if (size == 0 || status == SOCKET_OP_SUCCESS) {
             continue;
         }
@@ -42,24 +44,26 @@ coros::base::AwaitableValue<bool> coros::base::Socket::read(std::byte* dest,
             if (read_fully) {
                 throw std::runtime_error("Socket read(): Socket has been closed");
             }
-            co_return false;
+            break;
         }
     }
-    co_return true;
+    co_return total_read;
 }
 
-void coros::base::Socket::skip_available(long long& size) {
+void coros::base::Socket::skip_available(long long& size, long long& total_skipped) {
     long long buffer_remaining = input_buffer.get_total_remaining();
     long long size_to_skip = std::min(size, buffer_remaining);
     input_buffer.increment_read_pointer(size_to_skip);
     size -= size_to_skip;
+    total_skipped += size_to_skip;
 }
 
-coros::base::AwaitableValue<bool> coros::base::Socket::skip(long long size, bool skip_fully) {
-    skip_available(size);
+coros::base::AwaitableValue<long long> coros::base::Socket::skip(long long size, bool skip_fully) {
+    long long total_skipped = 0;
+    skip_available(size, total_skipped);
     while (size > 0) {
         SocketOperation status = stream.recv_from_socket(input_buffer);
-        skip_available(size);
+        skip_available(size, total_skipped);
         if (size == 0 || status == SOCKET_OP_SUCCESS) {
             continue;
         }
@@ -69,10 +73,10 @@ coros::base::AwaitableValue<bool> coros::base::Socket::skip(long long size, bool
             if (skip_fully) {
                 throw std::runtime_error("Socket skip(): Socket has been closed");
             }
-            co_return false;
+            break;
         }
     }
-    co_return true;
+    co_return total_skipped;
 }
 
 void coros::base::Socket::write_available(std::byte*& src, long long& size) {
