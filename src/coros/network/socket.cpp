@@ -20,6 +20,9 @@ coros::base::Socket::Socket(SocketDetails details, IoEventMonitor& io_monitor)
 
 void coros::base::Socket::read_available(std::byte*& dest, long long& size, long long& total_read) {
     long long buffer_remaining = input_buffer.get_total_remaining();
+    if (buffer_remaining == 0) {
+        return;
+    }
     long long size_to_read = std::min(size, buffer_remaining);
     input_buffer.read(dest, size_to_read);
     dest += size_to_read;
@@ -52,6 +55,9 @@ coros::base::AwaitableValue<long long> coros::base::Socket::read(std::byte* dest
 
 void coros::base::Socket::skip_available(long long& size, long long& total_skipped) {
     long long buffer_remaining = input_buffer.get_total_remaining();
+    if (buffer_remaining == 0) {
+        return;
+    }
     long long size_to_skip = std::min(size, buffer_remaining);
     input_buffer.increment_read_pointer(size_to_skip);
     size -= size_to_skip;
@@ -81,6 +87,9 @@ coros::base::AwaitableValue<long long> coros::base::Socket::skip(long long size,
 
 void coros::base::Socket::write_available(std::byte*& src, long long& size) {
     long long buffer_capacity = output_buffer.get_total_capacity();
+    if (buffer_capacity == 0) {
+        return;
+    }
     long long size_to_write = std::min(buffer_capacity, size);
     output_buffer.write(src, size_to_write);
     src += size_to_write;
