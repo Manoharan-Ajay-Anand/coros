@@ -32,12 +32,12 @@ namespace coros::base {
             std::atomic_bool is_closed;
             void read_available(std::byte*& dest, long long& size, long long& total_read);
             void skip_available(long long& size, long long& total_skipped);
-            void write_available(std::byte*& src, long long& size);
+            void write_available(const std::byte*& src, long long& size);
         public:
             Socket(SocketDetails details, IoEventMonitor& io_monitor);
             AwaitableValue<long long> read(std::byte* dest, long long size, bool read_fully);
             AwaitableValue<long long> skip(long long size, bool skip_fully);
-            AwaitableFuture write(std::byte* src, long long size);
+            AwaitableFuture write(const std::byte* src, long long size);
             AwaitableFuture flush();
             int get_fd();
             void close_socket();

@@ -69,20 +69,12 @@ void coros::base::ByteBuffer::read(std::byte* dest, long long size) {
         long long read_size = std::min(size, chunk.size);
         std::memcpy(dest, chunk.data, read_size);
         size -= read_size;
+        dest += read_size;
         increment_read_pointer(read_size);
     }
 }
 
-std::byte coros::base::ByteBuffer::read_b() {
-    if (get_total_remaining() == 0) {
-        throw std::runtime_error("ByteBuffer read_b error: No more remaining bytes");
-    }
-    std::byte b = *(data + get_index(read_p));
-    increment_read_pointer(1);
-    return b;
-}
-
-void coros::base::ByteBuffer::write(std::byte* src, long long size) {
+void coros::base::ByteBuffer::write(const std::byte* src, long long size) {
     if (size > get_total_capacity()) {
         throw std::runtime_error("ByteBuffer write error: Write size more than capacity");
     }
@@ -91,16 +83,9 @@ void coros::base::ByteBuffer::write(std::byte* src, long long size) {
         long long write_size = std::min(size, chunk.size);
         std::memcpy(chunk.data, src, write_size);
         size -= write_size;
+        src += write_size;
         increment_write_pointer(write_size);
     }
-}
-
-void coros::base::ByteBuffer::write_b(std::byte b) {
-    if (get_total_capacity() == 0) {
-        throw std::runtime_error("ByteBuffer write_b error: Full capacity reached");
-    }
-    *(data + get_index(write_p)) = b;
-    increment_write_pointer(1);
 }
 
 long long coros::base::ByteBuffer::get_total_capacity() {

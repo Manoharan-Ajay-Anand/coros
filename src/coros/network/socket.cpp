@@ -85,7 +85,7 @@ coros::base::AwaitableValue<long long> coros::base::Socket::skip(long long size,
     co_return total_skipped;
 }
 
-void coros::base::Socket::write_available(std::byte*& src, long long& size) {
+void coros::base::Socket::write_available(const std::byte*& src, long long& size) {
     long long buffer_capacity = output_buffer.get_total_capacity();
     if (buffer_capacity == 0) {
         return;
@@ -96,7 +96,7 @@ void coros::base::Socket::write_available(std::byte*& src, long long& size) {
     size -= size_to_write;
 }
 
-coros::base::AwaitableFuture coros::base::Socket::write(std::byte* src, long long size) {
+coros::base::AwaitableFuture coros::base::Socket::write(const std::byte* src, long long size) {
     write_available(src, size);
     while (size > 0) {
         SocketOperation status = stream.send_to_socket(output_buffer);
